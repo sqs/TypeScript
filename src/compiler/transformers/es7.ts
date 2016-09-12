@@ -28,7 +28,8 @@ namespace ts {
             switch (node.kind) {
                 case SyntaxKind.BinaryExpression:
                     return visitBinaryExpression(<BinaryExpression>node);
-
+                case SyntaxKind.ObjectLiteralExpression:
+                    return visitObjectLiteralExpression(node as ObjectLiteralExpression);
                 default:
                     Debug.failBadSyntaxKind(node);
                     return visitEachChild(node, visitor, context);
@@ -92,6 +93,62 @@ namespace ts {
                 Debug.failBadSyntaxKind(node);
                 return visitEachChild(node, visitor, context);
             }
+        }
+
+        function chunkObjectLiteralElements(elements: ObjectLiteralElement[], maximum: number): (SpreadElement | (ShorthandPropertyAssignment | PropertyAssignment)[])[] {
+            let chunkObject: (ShorthandPropertyAssignment | PropertyAssignment)[];
+            const objects: (SpreadElement | (ShorthandPropertyAssignment | PropertyAssignment)[])[] = [];
+            maximum = maximum || elements.length;
+            for (let i = 0; i < maximum; i++) {
+                const e = elements[i];
+                if (e.kind === SyntaxKind.SpreadElement) {
+                    if (chunkObject) {
+                        objects.push(chunkObject);
+                        chunkObject = undefined;
+                    }
+                    objects.push(e as SpreadElement);
+                }
+                else {
+                    if (!chunkObject) {
+                        chunkObject = [];
+                    }
+                    chunkObject.push(e as ShorthandPropertyAssignment | PropertyAssignment);
+                }
+            }
+            if (chunkObject) {
+                objects.push(chunkObject);
+            }
+
+            return objects;
+        }
+
+        function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression {
+            const numElements = node.properties.length; // how could this be different in the old emitter?
+            if (!find(node.properties, (p, i) => i < numElements && p.kind == SyntaxKind.SpreadElement)) {
+                // no spread elements mean no transforms
+                return node;
+            }
+
+            // spread elements emit like so:
+            // non-spread elements are chunked together into object literals, and then all are passed to __assign:
+            //     { a, ...o, b } => __assign({a}, o, {b});
+            // If the first element is a spread element, then the first argument to __assign is {}:
+            //     { ...o, a, b, ...o2 } => __assign({}, o, {a, b}, o2)
+            const chunks = chunkObjectLiteralElements(node.properties, numElements);
+            const objects: Expression[] = [];
+            if (chunks.length && !Array.isArray(chunks[0])) {
+                objects.push(createObjectLiteral());
+            }
+            for (const chunk of chunks) {
+                if (Array.isArray(chunk)) {
+                    objects.push(createObjectLiteral(chunk));
+                }
+                else {
+                    objects.push((chunk as SpreadElement).target);
+                }
+            }
+            return createCall(createIdentifier("__assign"), undefined, objects);
+
         }
     }
 }

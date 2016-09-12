@@ -2930,9 +2930,13 @@ namespace ts {
                     const newMembers = createMap<Symbol>();
                     const seenMembers = createMap<BindingElement>();
                     for (const element of pattern.elements) {
-                        if (!element.dotDotDotToken) {
-                            const name = element.propertyName || <Identifier>element.name;
-                            seenMembers[getTextOfPropertyName(name)] = element;
+                        if (element.kind === SyntaxKind.OmittedExpression) {
+                            continue;
+                        }
+                        const binding = element as BindingElement;
+                        if (!binding.dotDotDotToken) {
+                            const name = binding.propertyName || <Identifier>binding.name;
+                            seenMembers[getTextOfPropertyName(name)] = binding;
                         }
                     }
                     for (const prop of getPropertiesOfType(parentType)) {
