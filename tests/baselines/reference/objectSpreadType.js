@@ -15,7 +15,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };
 function f(t, u) {
-    var spreads = __assign({id: '1'}, t, u);
+    var spreads = __assign({ id: '1' }, t, u);
     return spreads;
 }
 

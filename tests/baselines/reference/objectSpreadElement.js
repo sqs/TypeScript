@@ -16,9 +16,10 @@ let combinedNested = {
     d: 'actually new',
     ...{ a: 5, d: 'maybe new' },
 }
+let propertyNested = { a: { ... o } }
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
-let op = { get a () { return 6 } };
+let op = { get a () { return 6 } }
 let getter = { ...op, c: 7 }
 
 // null and undefined are just skipped
@@ -26,9 +27,9 @@ let spreadNull = { ...null }
 let spreadUndefined = { ...undefined }
 
 // methods are not enumerable
-class C { p = 1; m() { } };
-let c: C = new C();
-let spreadC = {...c};
+class C { p = 1; m() { } }
+let c: C = new C()
+let spreadC = {...c}
 
 // computed property
 let computedFirst = {
@@ -53,17 +54,17 @@ function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
     return { id: 'id', ...t, ...u };
 }
 let exclusive: { id: string, a: number, b: string, c: string, d: boolean } =
-    f({ a: 1, b: 'yes' }, { c: 'no', d: false });
+    f({ a: 1, b: 'yes' }, { c: 'no', d: false })
 let overlap: { id: string, a: number, b: string } =
-    f({ a: 1 }, { a: 2, b: 'extra' });
+    f({ a: 1 }, { a: 2, b: 'extra' })
 let overlapConflict: { id:string, a: number & string } =
-    f({ a: 1 }, { a: 'mismatch' });
+    f({ a: 1 }, { a: 'mismatch' })
 let overwriteId: { id: string, a: number, d: string } =
-    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' });
+    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' })
 
 class D { m() { }; q = 2; }
 let classesAreWrong: /*{ id: string, ...C., ...D }*/ =
-    f(new C(), new D());
+    f(new C(), new D())
 
 
 //// [objectSpreadElement.js]
@@ -77,23 +78,22 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 };
 var o = { a: 1, b: 'no' };
 var o2 = { b: 'yes', c: true };
-var addAfter = __assign({}, o, {c: false});
-var addBefore = __assign({c: false}, o);
+var addAfter = __assign({}, o, { c: false });
+var addBefore = __assign({ c: false }, o);
 // Note: ignore still changes the order that properties are printed
-var ignore = __assign({b: 'ignored'}, o);
-var override = __assign({}, o, {b: 'override'});
-var nested = __assign({}, __assign({a: 3}, { b: false, c: 'overriden' }), {c: 'whatever'});
+var ignore = __assign({ b: 'ignored' }, o);
+var override = __assign({}, o, { b: 'override' });
+var nested = __assign({}, __assign({ a: 3 }, { b: false, c: 'overriden' }), { c: 'whatever' });
 var combined = __assign({}, o, o2);
-var combinedBefore = __assign({b: 'ok'}, o, o2);
-var combinedMid = __assign({}, o, {b: 'ok'}, o2);
-var combinedAfter = __assign({}, o, o2, {b: 'ok'});
-var combinedNested = __assign({}, __assign({a: 4}, { b: false, c: 'overriden' }), {
-d: 'actually new'
-}, { a: 5, d: 'maybe new' });
+var combinedBefore = __assign({ b: 'ok' }, o, o2);
+var combinedMid = __assign({}, o, { b: 'ok' }, o2);
+var combinedAfter = __assign({}, o, o2, { b: 'ok' });
+var combinedNested = __assign({}, __assign({ a: 4 }, { b: false, c: 'overriden' }), { d: 'actually new' }, { a: 5, d: 'maybe new' });
+var propertyNested = __assign({ a: __assign({}, o) });
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
 var op = { get a() { return 6; } };
-var getter = __assign({}, op, {c: 7});
+var getter = __assign({}, op, { c: 7 });
 // null and undefined are just skipped
 var spreadNull = __assign({}, null);
 var spreadUndefined = __assign({}, undefined);
@@ -105,31 +105,15 @@ var C = (function () {
     C.prototype.m = function () { };
     return C;
 }());
-;
 var c = new C();
 var spreadC = __assign({}, c);
 // computed property
-var computedFirst = (_a = {},
-    _a['before everything'] = 12,
-    Object.assign(_a, o),
-    _a.b = 'yes',
-    _a
-);
-var computedMiddle = (_b = __assign({}, o),
-    _b['in the middle'] = 13,
-    _b.b = 'maybe?',
-    Object.assign(_b, o2),
-    _b
-);
-var computedAfter = (_c = __assign({}, o, {
-    b: 'yeah'
-    }),
-    _c['at the end'] = 14,
-    _c
-);
+var computedFirst = __assign((_a = {}, _a['before everything'] = 12, _a), o, { b: 'yes' });
+var computedMiddle = __assign({}, o, (_b = {}, _b['in the middle'] = 13, _b.b = 'maybe?', _b), o2);
+var computedAfter = __assign({}, o, (_c = { b: 'yeah' }, _c['at the end'] = 14, _c));
 // generics
 function f(t, u) {
-    return __assign({id: 'id'}, t, u);
+    return __assign({ id: 'id' }, t, u);
 }
 var exclusive = f({ a: 1, b: 'yes' }, { c: 'no', d: false });
 var overlap = f({ a: 1 }, { a: 2, b: 'extra' });

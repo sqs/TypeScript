@@ -33,16 +33,15 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 var o = { a: 1, b: 'no' };
 var swap = { a: 'yes', b: -1 };
 // new field's type conflicts with existing field
-var o2 = __assign({}, o, {a: 'wrong type?'});
-var o3 = __assign({a: 'wrong type?'}, o);
+var o2 = __assign({}, o, { a: 'wrong type?' });
+var o3 = __assign({ a: 'wrong type?' }, o);
 var o4 = __assign({}, o, swap);
-var combinedNested = __assign({}, __assign({a: 1}, { b: false, c: 'overriden' }), {
-c: -1 // error, number not assignable to string
-});
+var combinedNested = __assign({}, __assign({ a: 1 }, { b: false, c: 'overriden' }), { c: -1 // error, number not assignable to string
+ });
 // expressions are not allowed
 var o5 = __assign({}, 1 + 1);
 var o6 = __assign({}, (1 + 1));
 // repeats are not allowed
-var duplicated = __assign({b: 'bad'}, o, {b: 'bad'}, o2, {b: 'bad'});
+var duplicated = __assign({ b: 'bad' }, o, { b: 'bad' }, o2, { b: 'bad' });
 // spreading write-only properties is not allowed
-var setterOnly = __assign({}, { set b(bad) { } });
+var setterOnly = __assign({ set b(bad: number) { } });

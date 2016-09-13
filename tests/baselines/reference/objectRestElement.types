@@ -3,9 +3,9 @@ let o = { a: 1, b: 'no' };
 >o : { a: number; b: string; }
 >{ a: 1, b: 'no' } : { a: number; b: string; }
 >a : number
->1 : number
+>1 : 1
 >b : string
->'no' : string
+>'no' : "no"
 
 var { ...clone } = o;
 >clone : { a: number; b: string; }
@@ -27,9 +27,9 @@ let o2 = { c: 'terrible idea?', d: 'yes' };
 >o2 : { c: string; d: string; }
 >{ c: 'terrible idea?', d: 'yes' } : { c: string; d: string; }
 >c : string
->'terrible idea?' : string
+>'terrible idea?' : "terrible idea?"
 >d : string
->'yes' : string
+>'yes' : "yes"
 
 var { d: renamed, ...d } = o2;
 >d : any

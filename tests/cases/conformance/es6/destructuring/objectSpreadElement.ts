@@ -16,9 +16,10 @@ let combinedNested = {
     d: 'actually new',
     ...{ a: 5, d: 'maybe new' },
 }
+let propertyNested = { a: { ... o } }
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
-let op = { get a () { return 6 } };
+let op = { get a () { return 6 } }
 let getter = { ...op, c: 7 }
 
 // null and undefined are just skipped
@@ -26,9 +27,9 @@ let spreadNull = { ...null }
 let spreadUndefined = { ...undefined }
 
 // methods are not enumerable
-class C { p = 1; m() { } };
-let c: C = new C();
-let spreadC = {...c};
+class C { p = 1; m() { } }
+let c: C = new C()
+let spreadC = {...c}
 
 // computed property
 let computedFirst = {
@@ -53,14 +54,14 @@ function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
     return { id: 'id', ...t, ...u };
 }
 let exclusive: { id: string, a: number, b: string, c: string, d: boolean } =
-    f({ a: 1, b: 'yes' }, { c: 'no', d: false });
+    f({ a: 1, b: 'yes' }, { c: 'no', d: false })
 let overlap: { id: string, a: number, b: string } =
-    f({ a: 1 }, { a: 2, b: 'extra' });
+    f({ a: 1 }, { a: 2, b: 'extra' })
 let overlapConflict: { id:string, a: number & string } =
-    f({ a: 1 }, { a: 'mismatch' });
+    f({ a: 1 }, { a: 'mismatch' })
 let overwriteId: { id: string, a: number, d: string } =
-    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' });
+    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' })
 
 class D { m() { }; q = 2; }
 let classesAreWrong: /*{ id: string, ...C., ...D }*/ =
-    f(new C(), new D());
+    f(new C(), new D())

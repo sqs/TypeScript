@@ -1,12 +1,12 @@
-tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(54,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; c: string; d: boolean; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(55,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; c: string; d: boolean; }'.
   Property 'a' is missing in type '{ id: string; }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(56,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(57,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; }'.
   Property 'a' is missing in type '{ id: string; }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(58,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number & string; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(59,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number & string; }'.
   Property 'a' is missing in type '{ id: string; }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(60,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; d: string; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(61,5): error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; d: string; }'.
   Property 'a' is missing in type '{ id: string; }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(64,54): error TS1110: Type expected.
+tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(65,54): error TS1110: Type expected.
 
 
 ==== tests/cases/conformance/es6/destructuring/objectSpreadElement.ts (5 errors) ====
@@ -27,9 +27,10 @@ tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(64,54): error T
         d: 'actually new',
         ...{ a: 5, d: 'maybe new' },
     }
+    let propertyNested = { a: { ... o } }
     // accessors don't copy the descriptor
     // (which means that readonly getters become read/write)
-    let op = { get a () { return 6 } };
+    let op = { get a () { return 6 } }
     let getter = { ...op, c: 7 }
     
     // null and undefined are just skipped
@@ -37,9 +38,9 @@ tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(64,54): error T
     let spreadUndefined = { ...undefined }
     
     // methods are not enumerable
-    class C { p = 1; m() { } };
-    let c: C = new C();
-    let spreadC = {...c};
+    class C { p = 1; m() { } }
+    let c: C = new C()
+    let spreadC = {...c}
     
     // computed property
     let computedFirst = {
@@ -67,26 +68,26 @@ tests/cases/conformance/es6/destructuring/objectSpreadElement.ts(64,54): error T
         ~~~~~~~~~
 !!! error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; c: string; d: boolean; }'.
 !!! error TS2322:   Property 'a' is missing in type '{ id: string; }'.
-        f({ a: 1, b: 'yes' }, { c: 'no', d: false });
+        f({ a: 1, b: 'yes' }, { c: 'no', d: false })
     let overlap: { id: string, a: number, b: string } =
         ~~~~~~~
 !!! error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; b: string; }'.
 !!! error TS2322:   Property 'a' is missing in type '{ id: string; }'.
-        f({ a: 1 }, { a: 2, b: 'extra' });
+        f({ a: 1 }, { a: 2, b: 'extra' })
     let overlapConflict: { id:string, a: number & string } =
         ~~~~~~~~~~~~~~~
 !!! error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number & string; }'.
 !!! error TS2322:   Property 'a' is missing in type '{ id: string; }'.
-        f({ a: 1 }, { a: 'mismatch' });
+        f({ a: 1 }, { a: 'mismatch' })
     let overwriteId: { id: string, a: number, d: string } =
         ~~~~~~~~~~~
 !!! error TS2322: Type '{ id: string; }' is not assignable to type '{ id: string; a: number; d: string; }'.
 !!! error TS2322:   Property 'a' is missing in type '{ id: string; }'.
-        f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' });
+        f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' })
     
     class D { m() { }; q = 2; }
     let classesAreWrong: /*{ id: string, ...C., ...D }*/ =
                                                          ~
 !!! error TS1110: Type expected.
-        f(new C(), new D());
+        f(new C(), new D())
     
