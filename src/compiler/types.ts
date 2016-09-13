@@ -2497,6 +2497,7 @@ namespace ts {
         instantiations: Map<TypeReference>;   // Generic instantiation cache
     }
 
+    // TypeOperator? TypeOperatorType? OperatorType?
     export interface UnionOrIntersectionType extends Type {
         types: Type[];                    // Constituent types
         /* @internal */
@@ -2509,7 +2510,10 @@ namespace ts {
 
     export interface IntersectionType extends UnionOrIntersectionType { }
 
-    export interface SpreadType extends ObjectType { }
+    export interface SpreadType extends UnionOrIntersectionType {
+        members: SymbolTable;
+        properties: Symbol[];
+    }
 
     /* @internal */
     // An instantiated anonymous type has a target and a mapper

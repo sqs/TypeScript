@@ -112,6 +112,7 @@ namespace ts {
         const tupleTypes: GenericType[] = [];
         const unionTypes = createMap<UnionType>();
         const intersectionTypes = createMap<IntersectionType>();
+        const spreadTypes = createMap<SpreadType>();
         const stringLiteralTypes = createMap<LiteralType>();
         const numericLiteralTypes = createMap<LiteralType>();
 
@@ -10166,10 +10167,26 @@ namespace ts {
             return createIndexInfo(unionType, /*isReadonly*/ false);
         }
 
+        function getSpreadType(spreads: Type[], properties: Symbol[]): SpreadType {
+            // TODO: Early exit (error cases and caching)
+            const id = getTypeListId(spreads);
+            const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
+            const type: SpreadType = spreadTypes[id] = <SpreadType>createObjectType(TypeFlags.Spread | propagatedFlags);
+            type.types = spreads;
+            // TODO: This actually needs all the normal processing that usually occurs inside checkObjectLiteral
+            // although a lot of that is now deferred, I guess.
+            type.properties = properties;
+            return type;
+        }
+
         function checkObjectLiteral(node: ObjectLiteralExpression, contextualMapper?: TypeMapper): Type {
             const inDestructuringPattern = isAssignmentTarget(node);
             // Grammar checking
             checkGrammarObjectLiteralExpression(node, inDestructuringPattern);
+            if (find(node.properties, p => p.kind === SyntaxKind.SpreadElement)) {
+                // TODO: Need to get types of the spread elements and symbols of the non-spread elements
+                return getSpreadType(node.properties.filter(p => p.kind === SyntaxKind.SpreadElement), node.properties.filter(p => p.kind !== SyntaxKind.SpreadElement));
+            }
 
             const propertiesTable = createMap<Symbol>();
             const propertiesArray: Symbol[] = [];
