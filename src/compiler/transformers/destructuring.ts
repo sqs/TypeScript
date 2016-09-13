@@ -363,7 +363,7 @@ namespace ts {
                         const propName = element.propertyName || <Identifier>element.name;
                         const destructuredValue = element.dotDotDotToken ?
                             createRestCall(value, propName as Identifier, name) :
-                            createDestructuringPropertyAccess(value, propName)
+                            createDestructuringPropertyAccess(value, propName);
                         emitBindingElement(element, destructuredValue);
                     }
                     else {

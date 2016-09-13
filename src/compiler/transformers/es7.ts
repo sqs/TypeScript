@@ -95,60 +95,49 @@ namespace ts {
             }
         }
 
-        function chunkObjectLiteralElements(elements: ObjectLiteralElement[], maximum: number): (SpreadElement | (ShorthandPropertyAssignment | PropertyAssignment)[])[] {
+        function chunkObjectLiteralElements(elements: ObjectLiteralElement[]): Expression[] {
             let chunkObject: (ShorthandPropertyAssignment | PropertyAssignment)[];
-            const objects: (SpreadElement | (ShorthandPropertyAssignment | PropertyAssignment)[])[] = [];
-            maximum = maximum || elements.length;
-            for (let i = 0; i < maximum; i++) {
-                const e = elements[i];
+            const objects: Expression[] = [];
+            for (const e of elements) {
                 if (e.kind === SyntaxKind.SpreadElement) {
                     if (chunkObject) {
-                        objects.push(chunkObject);
+                        objects.push(createObjectLiteral(chunkObject));
                         chunkObject = undefined;
                     }
-                    objects.push(e as SpreadElement);
+                    const target = (e as SpreadElement).target;
+                    objects.push(visitNode(target, visitor, isExpression));
                 }
                 else {
                     if (!chunkObject) {
                         chunkObject = [];
                     }
-                    chunkObject.push(e as ShorthandPropertyAssignment | PropertyAssignment);
+                    if (e.kind === SyntaxKind.PropertyAssignment) {
+                        const p = e as PropertyAssignment;
+                        chunkObject.push(createPropertyAssignment(p.name, visitNode(p.initializer, visitor, isExpression)));
+                    }
+                    else {
+                        chunkObject.push(e as ShorthandPropertyAssignment);
+                    }
                 }
             }
             if (chunkObject) {
-                objects.push(chunkObject);
+                objects.push(createObjectLiteral(chunkObject));
             }
 
             return objects;
         }
 
         function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression {
-            const numElements = node.properties.length; // how could this be different in the old emitter?
-            if (!find(node.properties, (p, i) => i < numElements && p.kind == SyntaxKind.SpreadElement)) {
-                // no spread elements mean no transforms
-                return node;
-            }
-
             // spread elements emit like so:
             // non-spread elements are chunked together into object literals, and then all are passed to __assign:
             //     { a, ...o, b } => __assign({a}, o, {b});
             // If the first element is a spread element, then the first argument to __assign is {}:
             //     { ...o, a, b, ...o2 } => __assign({}, o, {a, b}, o2)
-            const chunks = chunkObjectLiteralElements(node.properties, numElements);
-            const objects: Expression[] = [];
-            if (chunks.length && !Array.isArray(chunks[0])) {
-                objects.push(createObjectLiteral());
-            }
-            for (const chunk of chunks) {
-                if (Array.isArray(chunk)) {
-                    objects.push(createObjectLiteral(chunk));
-                }
-                else {
-                    objects.push((chunk as SpreadElement).target);
-                }
+            const objects = chunkObjectLiteralElements(node.properties);
+            if (objects.length && objects[0].kind !== SyntaxKind.ObjectLiteralExpression) {
+                objects.unshift(createObjectLiteral());
             }
             return createCall(createIdentifier("__assign"), undefined, objects);
-
         }
     }
 }

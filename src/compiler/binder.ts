@@ -2962,8 +2962,9 @@ namespace ts {
                 }
                 break;
 
+            case SyntaxKind.SpreadElement:
             case SyntaxKind.SpreadElementExpression:
-                // This node is ES6 syntax, but is handled by a containing node.
+                // This node is ES6 or ES future syntax, but is handled by a containing node.
                 transformFlags |= TransformFlags.ContainsSpreadElementExpression;
                 break;
 
@@ -3000,6 +3001,12 @@ namespace ts {
                     // A computed property name containing `this` might need to be rewritten,
                     // so propagate the ContainsLexicalThis flag upward.
                     transformFlags |= TransformFlags.ContainsLexicalThis;
+                }
+
+                if (subtreeFlags & TransformFlags.ContainsSpreadElementExpression) {
+                    // If an ObjectLiteralExpression contains a spread element, then it
+                    // is an ES experimental node.
+                    transformFlags |= TransformFlags.AssertES7;
                 }
 
                 break;

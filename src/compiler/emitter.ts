@@ -185,6 +185,7 @@ const _super = (function (geti, seti) {
         let currentFileIdentifiers: Map<string>;
         let extendsEmitted: boolean;
         let assignEmitted: boolean;
+        let restEmitted: boolean;
         let decorateEmitted: boolean;
         let paramEmitted: boolean;
         let awaiterEmitted: boolean;
@@ -2156,6 +2157,11 @@ const _super = (function (geti, seti) {
             if (compilerOptions.jsx !== JsxEmit.Preserve && !assignEmitted && (node.flags & NodeFlags.HasSpreadAttribute)) {
                 writeLines(assignHelper);
                 assignEmitted = true;
+            }
+
+            if (!restEmitted && node.flags & NodeFlags.HasRestAttribute) {
+                writeLines(restHelper);
+                restEmitted = true;
             }
 
             if (!decorateEmitted && node.flags & NodeFlags.HasDecorators) {

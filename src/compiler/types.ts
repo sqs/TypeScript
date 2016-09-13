@@ -316,7 +316,7 @@ namespace ts {
         // Property assignments
         PropertyAssignment,
         ShorthandPropertyAssignment,
-        SpreadElement,
+        SpreadElement, // maybe name it SpreadProperty?
         SpreadTypeElement,
 
 
@@ -3116,6 +3116,7 @@ namespace ts {
         DestructuringAssignment = 1 << 8,
         Generator = 1 << 9,
         ContainsGenerator = 1 << 10,
+        // TODO: Probably need an [ES]Experimental flag here instead. Right I'm just using ES7.
 
         // Markers
         // - Flags used to indicate that a subtree contains a specific transformation.
