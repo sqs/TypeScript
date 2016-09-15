@@ -135,7 +135,7 @@ namespace ts {
 
         function emitAssignment(name: Identifier, value: Expression, location: TextRange, original: Node) {
             const declaration = createVariableDeclaration(name, /*type*/ undefined, value, location);
-            declaration.original = original;
+            declaration.original = original; //this is the only difference between this and flattenParameterDestructuring
 
             // NOTE: this completely disables source maps, but aligns with the behavior of
             //       `emitAssignment` in the old emitter.

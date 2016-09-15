@@ -959,6 +959,7 @@ namespace ts {
             addAntecedent(postFinallyLabel, currentFlow);
             if (node.catchClause) {
                 currentFlow = preTryFlow;
+                //!!!
                 bind(node.catchClause);
                 addAntecedent(postFinallyLabel, currentFlow);
             }
@@ -2325,7 +2326,9 @@ namespace ts {
 
             case SyntaxKind.VariableStatement:
                 return computeVariableStatement(<VariableStatement>node, subtreeFlags);
-
+            //move:
+            case SyntaxKind.CatchClause:
+                return computeCatchClause(<CatchClause>node, subtreeFlags);
             case SyntaxKind.LabeledStatement:
                 return computeLabeledStatement(<LabeledStatement>node, subtreeFlags);
 
@@ -2781,6 +2784,19 @@ namespace ts {
         return transformFlags & ~TransformFlags.NodeExcludes;
     }
 
+    //move
+    function computeCatchClause(node: CatchClause, subtreeFlags: TransformFlags) {
+        let transformFlags = subtreeFlags;
+
+        if (isBindingPattern(node.variableDeclaration.name)) {
+            transformFlags |= TransformFlags.AssertES6;
+            console.log("DONE FLAGGED IT!");
+        }
+
+        node.transformFlags = transformFlags | TransformFlags.HasComputedFlags; //why???
+        return transformFlags & ~TransformFlags.NodeExcludes; //why???
+    }
+
     function computeLabeledStatement(node: LabeledStatement, subtreeFlags: TransformFlags) {
         let transformFlags = subtreeFlags;
 
@@ -2848,6 +2864,7 @@ namespace ts {
         return transformFlags & ~TransformFlags.VariableDeclarationListExcludes;
     }
 
+    //!!!
     function computeOther(node: Node, kind: SyntaxKind, subtreeFlags: TransformFlags) {
         // Mark transformations needed for each node
         let transformFlags = subtreeFlags;

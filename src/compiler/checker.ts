@@ -3236,6 +3236,12 @@ namespace ts {
             return isPrivateWithinAmbient(memberDeclaration);
         }
 
+        //move? name?
+        function isInCatchClause(declaration: Node): boolean {
+            const root = declaration.kind === SyntaxKind.BindingElement ? getRootDeclaration(declaration) : declaration;
+            return root.parent.kind === SyntaxKind.CatchClause;
+        }
+
         function getTypeOfVariableOrParameterOrProperty(symbol: Symbol): Type {
             const links = getSymbolLinks(symbol);
             if (!links.type) {
@@ -3245,7 +3251,7 @@ namespace ts {
                 }
                 // Handle catch clause variables
                 const declaration = symbol.valueDeclaration;
-                if (declaration.parent.kind === SyntaxKind.CatchClause) {
+                if (isInCatchClause(declaration)) {
                     return links.type = anyType;
                 }
                 // Handle export default expressions
@@ -7480,6 +7486,8 @@ namespace ts {
                         Diagnostics.Parameter_0_implicitly_has_an_1_type;
                     break;
                 case SyntaxKind.BindingElement:
+                    //this is the one!
+                    debugger;
                     diagnostic = Diagnostics.Binding_element_0_implicitly_has_an_1_type;
                     break;
                 case SyntaxKind.FunctionDeclaration:
@@ -16450,23 +16458,35 @@ namespace ts {
             if (catchClause) {
                 // Grammar checking
                 if (catchClause.variableDeclaration) {
-                    if (catchClause.variableDeclaration.name.kind !== SyntaxKind.Identifier) {
-                        grammarErrorOnFirstToken(catchClause.variableDeclaration.name, Diagnostics.Catch_clause_variable_name_must_be_an_identifier);
-                    }
-                    else if (catchClause.variableDeclaration.type) {
+                    //if (catchClause.variableDeclaration.name.kind !== SyntaxKind.Identifier) {
+                    //    grammarErrorOnFirstToken(catchClause.variableDeclaration.name, Diagnostics.Catch_clause_variable_name_must_be_an_identifier);
+                    //}
+                    if (catchClause.variableDeclaration.type) {
                         grammarErrorOnFirstToken(catchClause.variableDeclaration.type, Diagnostics.Catch_clause_variable_cannot_have_a_type_annotation);
                     }
                     else if (catchClause.variableDeclaration.initializer) {
                         grammarErrorOnFirstToken(catchClause.variableDeclaration.initializer, Diagnostics.Catch_clause_variable_cannot_have_an_initializer);
                     }
                     else {
-                        const identifierName = (<Identifier>catchClause.variableDeclaration.name).text;
+                        /*
+                        const identifierName = (<Identifier>catchClause.variableDeclaration.name).text; //WRONG!!!
                         const locals = catchClause.block.locals;
                         if (locals) {
                             const localSymbol = locals[identifierName];
                             if (localSymbol && (localSymbol.flags & SymbolFlags.BlockScopedVariable) !== 0) {
                                 grammarErrorOnNode(localSymbol.valueDeclaration, Diagnostics.Cannot_redeclare_identifier_0_in_catch_clause, identifierName);
                             }
+                        }*/
+                        const locals = catchClause.block.locals;
+                        if (locals) {
+                            forEachBoundIdentifier(catchClause.variableDeclaration.name, identifier => {
+                                const identifierName = identifier.text;
+                                const localSymbol = locals[identifierName];
+                                //TODO:test that this works!
+                                if (localSymbol && (localSymbol.flags & SymbolFlags.BlockScopedVariable) !== 0) {
+                                    grammarErrorOnNode(localSymbol.valueDeclaration, Diagnostics.Cannot_redeclare_identifier_0_in_catch_clause, identifierName);
+                                }
+                            });
                         }
                     }
                 }
@@ -16476,6 +16496,21 @@ namespace ts {
 
             if (node.finallyBlock) {
                 checkBlock(node.finallyBlock);
+            }
+        }
+
+        //utilities.ts?
+        function forEachBoundIdentifier(b: BindingName, f: (id: Identifier) => void) {
+            //if-else
+            switch (b.kind) {
+                case SyntaxKind.Identifier:
+                    f(<Identifier>b);
+                default:
+                    forEach((<BindingPattern>b).elements, element => {
+                        if (element.kind === SyntaxKind.BindingElement) {
+                            forEachBoundIdentifier((<BindingElement>element).name, f);
+                        }
+                    });
             }
         }
 

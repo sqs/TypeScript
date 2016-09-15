@@ -345,6 +345,9 @@ namespace ts {
 
                 case SyntaxKind.ForOfStatement:
                     return visitForOfStatement(<ForOfStatement>node);
+                //move?
+                case SyntaxKind.CatchClause:
+                    return visitCatchClause(<CatchClause>node);
 
                 case SyntaxKind.ExpressionStatement:
                     return visitExpressionStatement(<ExpressionStatement>node);
@@ -1686,6 +1689,7 @@ namespace ts {
          *
          * @param node A VariableDeclaration node.
          */
+        //offset is never used!
         function visitVariableDeclaration(node: VariableDeclaration, offset: number): VisitResult<VariableDeclaration> {
             // If we are here it is because the name contains a binding pattern.
             if (isBindingPattern(node.name)) {
@@ -1741,6 +1745,31 @@ namespace ts {
          */
         function visitForOfStatement(node: ForOfStatement): VisitResult<Statement> {
             return convertIterationStatementBodyIfNecessary(node, convertForOfToFor);
+        }
+
+        //move
+        function visitCatchClause(node: CatchClause): CatchClause {
+            //only get here if it's special
+            const b = node.variableDeclaration.name;
+            Debug.assert(isBindingPattern(b));
+            //visitVariableDeclaration(node.variableDeclaration, 0);
+            const vars = flattenVariableDestructuring(context, node.variableDeclaration, /*value*/ undefined, visitor);
+
+            const newVariableDeclaration = vars[0];
+
+            const modifiers: Modifier[] = []; //let isn't a modifier. TODO: use a constant empty array.
+            const variableDeclarations = vars.slice(1); //TODO: use a VariableDeclarationList?
+            const destructure = createVariableStatement(modifiers, variableDeclarations);
+
+            //recurse into block???
+            const oldBlock = node.block;
+            const newStatements = ([destructure] as Statement[]).concat(oldBlock.statements);
+            const newBlock = createBlock(newStatements, /*location*/oldBlock, /*multiLine*/false, /*flags*/oldBlock.flags); //TODO: should be multiLine?
+
+            return createCatchClause(
+                newVariableDeclaration,
+                newBlock,
+                /*location*/ node);
         }
 
         function convertForOfToFor(node: ForOfStatement, convertedLoopBodyStatements: Statement[]): ForStatement {
