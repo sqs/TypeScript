@@ -1043,7 +1043,7 @@
         "category": "Error",
         "code": 2348
     },
-    "Cannot invoke an expression whose type lacks a call signature.": {
+    "Cannot invoke an expression whose type lacks a call signature. Type '{0}' has no compatible call signatures.": {
         "category": "Error",
         "code": 2349
     },
@@ -1947,18 +1947,31 @@
         "category": "Error",
         "code": 2692
     },
-    "Spread properties must be identifiers, property accesses, or object literals.": {
+    "'{0}' only refers to a type, but is being used as a value here.": {
         "category": "Error",
         "code": 2693
     },
-    "Cannot change type of property '{0}' from '{1}' to '{2}'.": {
+    "Namespace '{0}' has no exported member '{1}'.": {
         "category": "Error",
         "code": 2694
     },
-    "Cannot spread property '{0}' because it does not have a 'get' accessor.": {
+    "Left side of comma operator is unused and has no side effects.": {
         "category": "Error",
         "code": 2695
     },
+    "Spread properties must be identifiers, property accesses, or object literals.": {
+        "category": "Error",
+        "code": 2696
+    },
+    "Cannot change type of property '{0}' from '{1}' to '{2}'.": {
+        "category": "Error",
+        "code": 2697
+    },
+    "Cannot spread property '{0}' because it does not have a 'get' accessor.": {
+        "category": "Error",
+        "code": 2698
+    },
+
     "Import declaration '{0}' is using private name '{1}'.": {
         "category": "Error",
         "code": 4000
@@ -3055,5 +3068,14 @@
     "Unknown typing option '{0}'.": {
         "category": "Error",
         "code": 17010
+    },
+
+    "Circularity detected while resolving configuration: {0}": {
+        "category": "Error",
+        "code": 18000
+    },
+    "The path in an 'extends' options must be relative or rooted.": {
+        "category": "Error",
+        "code": 18001
     }
 }

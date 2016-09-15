@@ -10,6 +10,7 @@
 /// <reference path='documentRegistry.ts' />
 /// <reference path='findAllReferences.ts' />
 /// <reference path='goToDefinition.ts' />
+/// <reference path='goToImplementation.ts' />
 /// <reference path='jsDoc.ts' />
 /// <reference path='jsTyping.ts' />
 /// <reference path='navigateTo.ts' />
@@ -42,7 +43,7 @@ namespace ts {
         public end: number;
         public flags: NodeFlags;
         public parent: Node;
-        public jsDocComments: JSDocComment[];
+        public jsDocComments: JSDoc[];
         public original: Node;
         public transformFlags: TransformFlags;
         public excludeTransformFlags: TransformFlags;
@@ -91,7 +92,10 @@ namespace ts {
         }
 
         public getText(sourceFile?: SourceFile): string {
-            return (sourceFile || this.getSourceFile()).text.substring(this.getStart(), this.getEnd());
+            if (!sourceFile) {
+                sourceFile = this.getSourceFile();
+            }
+            return sourceFile.text.substring(this.getStart(sourceFile), this.getEnd());
         }
 
         private addSyntheticNodes(nodes: Node[], pos: number, end: number, useJSDocScanner?: boolean): number {
@@ -212,7 +216,7 @@ namespace ts {
         public end: number;
         public flags: NodeFlags;
         public parent: Node;
-        public jsDocComments: JSDocComment[];
+        public jsDocComments: JSDoc[];
         public __tokenTag: any;
 
         constructor(pos: number, end: number) {
@@ -1268,6 +1272,13 @@ namespace ts {
             return GoToDefinition.getDefinitionAtPosition(program, getValidSourceFile(fileName), position);
         }
 
+        /// Goto implementation
+        function getImplementationAtPosition(fileName: string, position: number): ImplementationLocation[] {
+            synchronizeHostData();
+            return GoToImplementation.getImplementationAtPosition(program.getTypeChecker(), cancellationToken,
+                program.getSourceFiles(), getTouchingPropertyName(getValidSourceFile(fileName), position));
+        }
+
         function getTypeDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[] {
             synchronizeHostData();
             return GoToDefinition.getTypeDefinitionAtPosition(program.getTypeChecker(), getValidSourceFile(fileName), position);
@@ -1344,10 +1355,11 @@ namespace ts {
         }
 
         /// NavigateTo
-        function getNavigateToItems(searchValue: string, maxResultCount?: number): NavigateToItem[] {
+        function getNavigateToItems(searchValue: string, maxResultCount?: number, fileName?: string): NavigateToItem[] {
             synchronizeHostData();
-            const checker = getProgram().getTypeChecker();
-            return ts.NavigateTo.getNavigateToItems(program, checker, cancellationToken, searchValue, maxResultCount);
+
+            const sourceFiles = fileName ? [getValidSourceFile(fileName)] : program.getSourceFiles();
+            return ts.NavigateTo.getNavigateToItems(sourceFiles, program.getTypeChecker(), cancellationToken, searchValue, maxResultCount);
         }
 
         function getEmitOutput(fileName: string): EmitOutput {
@@ -1777,6 +1789,7 @@ namespace ts {
             getSignatureHelpItems,
             getQuickInfoAtPosition,
             getDefinitionAtPosition,
+            getImplementationAtPosition,
             getTypeDefinitionAtPosition,
             getReferencesAtPosition,
             findReferences,

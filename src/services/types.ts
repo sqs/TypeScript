@@ -209,6 +209,7 @@ namespace ts {
 
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
         getTypeDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
+        getImplementationAtPosition(fileName: string, position: number): ImplementationLocation[];
 
         getReferencesAtPosition(fileName: string, position: number): ReferenceEntry[];
         findReferences(fileName: string, position: number): ReferencedSymbol[];
@@ -217,7 +218,7 @@ namespace ts {
         /** @deprecated */
         getOccurrencesAtPosition(fileName: string, position: number): ReferenceEntry[];
 
-        getNavigateToItems(searchValue: string, maxResultCount?: number): NavigateToItem[];
+        getNavigateToItems(searchValue: string, maxResultCount?: number, fileName?: string): NavigateToItem[];
         getNavigationBarItems(fileName: string): NavigationBarItem[];
 
         getOutliningSpans(fileName: string): OutliningSpan[];
@@ -297,6 +298,11 @@ namespace ts {
         isDefinition: boolean;
     }
 
+    export interface ImplementationLocation {
+        textSpan: TextSpan;
+        fileName: string;
+    }
+
     export interface DocumentHighlights {
         fileName: string;
         highlightSpans: HighlightSpan[];
@@ -353,6 +359,7 @@ namespace ts {
         InsertSpaceAfterOpeningAndBeforeClosingNonemptyBraces?: boolean;
         InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: boolean;
         InsertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces?: boolean;
+        InsertSpaceAfterTypeAssertion?: boolean;
         PlaceOpenBraceOnNewLineForFunctions: boolean;
         PlaceOpenBraceOnNewLineForControlBlocks: boolean;
         [s: string]: boolean | number | string | undefined;

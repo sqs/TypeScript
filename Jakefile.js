@@ -129,6 +129,7 @@ var servicesSources = [
     "documentRegistry.ts",
     "findAllReferences.ts",
     "goToDefinition.ts",
+    "goToImplementation.ts",
     "jsDoc.ts",
     "jsTyping.ts",
     "navigateTo.ts",
@@ -216,6 +217,7 @@ var harnessSources = harnessCoreSources.concat([
     "moduleResolution.ts",
     "tsconfigParsing.ts",
     "commandLineParsing.ts",
+    "configurationExtension.ts",
     "convertCompilerOptionsFromJson.ts",
     "convertTypingOptionsFromJson.ts",
     "tsserverProjectSystem.ts",
@@ -788,7 +790,7 @@ function cleanTestDirs() {
 
 // used to pass data from jake command line directly to run.js
 function writeTestConfigFile(tests, light, taskConfigsFolder, workerCount, stackTraceLimit) {
-    var testConfigContents = JSON.stringify({ 
+    var testConfigContents = JSON.stringify({
         test: tests ? [tests] : undefined,
         light: light,
         workerCount: workerCount,
@@ -1054,7 +1056,7 @@ var loggedIOJsPath = builtLocalDirectory + 'loggedIO.js';
 file(loggedIOJsPath, [builtLocalDirectory, loggedIOpath], function () {
     var temp = builtLocalDirectory + 'temp';
     jake.mkdirP(temp);
-    var options = "--outdir " + temp + ' ' + loggedIOpath;
+    var options = "--types --outdir " + temp + ' ' + loggedIOpath;
     var cmd = host + " " + LKGDirectory + compilerFilename + " " + options + " ";
     console.log(cmd + "\n");
     var ex = jake.createExec([cmd]);
