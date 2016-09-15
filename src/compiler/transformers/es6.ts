@@ -1747,29 +1747,47 @@ namespace ts {
             return convertIterationStatementBodyIfNecessary(node, convertForOfToFor);
         }
 
+        /*
+        PROBLEMS:
+        "ab" comment not going through
+        Also, we get an unnecessary "= void 0"
+        */
         //move
         function visitCatchClause(node: CatchClause): CatchClause {
-            //only get here if it's special
-            const b = node.variableDeclaration.name;
-            Debug.assert(isBindingPattern(b));
+            Debug.assert(isBindingPattern(node.variableDeclaration.name));
+
+            const fullCommentRange = getCommentRange(node);
+            const varsCommentRange = getCommentRange(node.variableDeclaration);
+            debugger;
+
             //visitVariableDeclaration(node.variableDeclaration, 0);
-            const vars = flattenVariableDestructuring(context, node.variableDeclaration, /*value*/ undefined, visitor);
+            const temp = createTempVariable(undefined);
+            const vars = flattenVariableDestructuring(context, node.variableDeclaration, temp, visitor);
 
-            const newVariableDeclaration = vars[0];
+            //this one should have the comment on it...
+            const newVariableDeclaration = createVariableDeclaration(temp);
+            //updateVariableDeclaration(node.variableDeclaration,
+            setCommentRange(newVariableDeclaration, varsCommentRange); //doesn't seem to work?
 
-            const modifiers: Modifier[] = []; //let isn't a modifier. TODO: use a constant empty array.
-            const variableDeclarations = vars.slice(1); //TODO: use a VariableDeclarationList?
-            const destructure = createVariableStatement(modifiers, variableDeclarations);
+            const modifiers: Modifier[] = []; //TODO: use a constant empty array.
+            //This doesn't seem like it has any improvement over variableDeclarations.
+            const list = createVariableDeclarationList(vars, /*location*/node.variableDeclaration, /*flags*/node.variableDeclaration.flags);
+            const destructure = createVariableStatement(undefined, list);
 
             //recurse into block???
-            const oldBlock = node.block;
-            const newStatements = ([destructure] as Statement[]).concat(oldBlock.statements);
-            const newBlock = createBlock(newStatements, /*location*/oldBlock, /*multiLine*/false, /*flags*/oldBlock.flags); //TODO: should be multiLine?
+            //TODO: test what happens if block contains ES6 in it
+            const newBlock = addStatementToStartOfBlock(node.block, destructure);
 
-            return createCatchClause(
-                newVariableDeclaration,
-                newBlock,
-                /*location*/ node);
+            //setCommentRange?
+            return updateCatchClause(node, newVariableDeclaration, newBlock);
+        }
+
+        function addStatementToStartOfBlock(block: Block, statement: Statement): Block {
+            const transformedStatements = visitNodes(block.statements, visitor, isStatement);
+            const newStatements = [statement].concat(transformedStatements);
+            return updateBlock(block, newStatements);
+            //TODO: Assuming this should always be multiline
+            //return createBlock(newStatements, /*location*/block, /*multiLine*/true, /*flags*/block.flags);
         }
 
         function convertForOfToFor(node: ForOfStatement, convertedLoopBodyStatements: Statement[]): ForStatement {

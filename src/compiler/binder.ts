@@ -2790,7 +2790,6 @@ namespace ts {
 
         if (isBindingPattern(node.variableDeclaration.name)) {
             transformFlags |= TransformFlags.AssertES6;
-            console.log("DONE FLAGGED IT!");
         }
 
         node.transformFlags = transformFlags | TransformFlags.HasComputedFlags; //why???

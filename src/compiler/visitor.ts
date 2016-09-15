@@ -896,6 +896,7 @@ namespace ts {
             case SyntaxKind.Block:
                 return updateBlock(<Block>node,
                     visitNodes((<Block>node).statements, visitor, isStatement));
+                    //kilroy was here
 
             case SyntaxKind.VariableStatement:
                 return updateVariableStatement(<VariableStatement>node,

@@ -7486,8 +7486,6 @@ namespace ts {
                         Diagnostics.Parameter_0_implicitly_has_an_1_type;
                     break;
                 case SyntaxKind.BindingElement:
-                    //this is the one!
-                    debugger;
                     diagnostic = Diagnostics.Binding_element_0_implicitly_has_an_1_type;
                     break;
                 case SyntaxKind.FunctionDeclaration:
@@ -16458,9 +16456,6 @@ namespace ts {
             if (catchClause) {
                 // Grammar checking
                 if (catchClause.variableDeclaration) {
-                    //if (catchClause.variableDeclaration.name.kind !== SyntaxKind.Identifier) {
-                    //    grammarErrorOnFirstToken(catchClause.variableDeclaration.name, Diagnostics.Catch_clause_variable_name_must_be_an_identifier);
-                    //}
                     if (catchClause.variableDeclaration.type) {
                         grammarErrorOnFirstToken(catchClause.variableDeclaration.type, Diagnostics.Catch_clause_variable_cannot_have_a_type_annotation);
                     }
@@ -16468,18 +16463,9 @@ namespace ts {
                         grammarErrorOnFirstToken(catchClause.variableDeclaration.initializer, Diagnostics.Catch_clause_variable_cannot_have_an_initializer);
                     }
                     else {
-                        /*
-                        const identifierName = (<Identifier>catchClause.variableDeclaration.name).text; //WRONG!!!
                         const locals = catchClause.block.locals;
                         if (locals) {
-                            const localSymbol = locals[identifierName];
-                            if (localSymbol && (localSymbol.flags & SymbolFlags.BlockScopedVariable) !== 0) {
-                                grammarErrorOnNode(localSymbol.valueDeclaration, Diagnostics.Cannot_redeclare_identifier_0_in_catch_clause, identifierName);
-                            }
-                        }*/
-                        const locals = catchClause.block.locals;
-                        if (locals) {
-                            forEachBoundIdentifier(catchClause.variableDeclaration.name, identifier => {
+                            forEachIdentifierInBindingName(catchClause.variableDeclaration.name, identifier => {
                                 const identifierName = identifier.text;
                                 const localSymbol = locals[identifierName];
                                 //TODO:test that this works!
@@ -16500,7 +16486,7 @@ namespace ts {
         }
 
         //utilities.ts?
-        function forEachBoundIdentifier(b: BindingName, f: (id: Identifier) => void) {
+        function forEachIdentifierInBindingName(b: BindingName, f: (id: Identifier) => void) {
             //if-else
             switch (b.kind) {
                 case SyntaxKind.Identifier:
@@ -16508,7 +16494,7 @@ namespace ts {
                 default:
                     forEach((<BindingPattern>b).elements, element => {
                         if (element.kind === SyntaxKind.BindingElement) {
-                            forEachBoundIdentifier((<BindingElement>element).name, f);
+                            forEachIdentifierInBindingName((<BindingElement>element).name, f);
                         }
                     });
             }
