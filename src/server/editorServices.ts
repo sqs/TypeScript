@@ -1156,39 +1156,44 @@ namespace ts.server {
             }
         }
 
-        closeExternalProject(uncheckedFileName: string): void {
+        private closeConfiguredProject(configFile: NormalizedPath) {
+            const configuredProject = this.findConfiguredProjectByProjectName(configFile);
+            if (configuredProject && configuredProject.deleteOpenRef() === 0) {
+                this.removeProject(configuredProject);
+                return true;
+            }
+            return false;
+        }
+
+        closeExternalProject(uncheckedFileName: string, suppressRefresh = false): boolean {
             const fileName = toNormalizedPath(uncheckedFileName);
             const configFiles = this.externalProjectToConfiguredProjectMap[fileName];
             if (configFiles) {
                 let shouldRefreshInferredProjects = false;
                 for (const configFile of configFiles) {
-                    const configuredProject = this.findConfiguredProjectByProjectName(configFile);
-                    if (configuredProject && configuredProject.deleteOpenRef() === 0) {
-                        this.removeProject(configuredProject);
+                    if (this.closeConfiguredProject(configFile)) {
                         shouldRefreshInferredProjects = true;
                     }
                 }
-                if (shouldRefreshInferredProjects) {
+                if (shouldRefreshInferredProjects && !suppressRefresh) {
                     this.refreshInferredProjects();
                 }
+                return shouldRefreshInferredProjects;
             }
             else {
                 // close external project
                 const externalProject = this.findExternalProjectByProjectName(uncheckedFileName);
                 if (externalProject) {
                     this.removeProject(externalProject);
-                    this.refreshInferredProjects();
+                    if (!suppressRefresh) {
+                        this.refreshInferredProjects();
+                    }
                 }
+                return !!externalProject;
             }
         }
 
         openExternalProject(proj: protocol.ExternalProject): void {
-            const externalProject = this.findExternalProjectByProjectName(proj.projectFileName);
-            if (externalProject) {
-                this.updateNonInferredProject(externalProject, proj.rootFiles, externalFilePropertyReader, proj.options, proj.typingOptions, proj.options.compileOnSave, /*configFileErrors*/ undefined);
-                return;
-            }
-
             let tsConfigFiles: NormalizedPath[];
             const rootFiles: protocol.ExternalFile[] = [];
             for (const file of proj.rootFiles) {
@@ -1200,6 +1205,69 @@ namespace ts.server {
                     rootFiles.push(file);
                 }
             }
+
+            // sort config files to simplify comparison later
+            if (tsConfigFiles) {
+                tsConfigFiles.sort();
+            }
+
+            const externalProject = this.findExternalProjectByProjectName(proj.projectFileName);
+            if (externalProject && !tsConfigFiles) {
+                // external project already exists and not config files were added - update the project and return;
+                this.updateNonInferredProject(externalProject, proj.rootFiles, externalFilePropertyReader, proj.options, proj.typingOptions, proj.options.compileOnSave, /*configFileErrors*/ undefined);
+                return;
+            }
+
+            let shouldRefreshInferredProjects = false;
+            if (externalProject && tsConfigFiles) {
+                // some config files were added to external project (that previously were not there)
+                // close existing project and later we'll open a set of configured projecs
+                shouldRefreshInferredProjects = this.closeExternalProject(proj.projectFileName, /*suppressRefresh*/ true);
+            }
+
+            if (!externalProject && this.externalProjectToConfiguredProjectMap[proj.projectFileName]) {
+                // this project used to contain config files
+                if (!tsConfigFiles) {
+                    // config files were removed from the project - close existing external project which in turn will close configured projects
+                    shouldRefreshInferredProjects = this.closeExternalProject(proj.projectFileName, /*suppressRefresh*/ true);
+                }
+                else {
+                    const oldConfigFiles = this.externalProjectToConfiguredProjectMap[proj.projectFileName];
+                    // project previously had some config files
+                    // close all unused configured projects
+                    let iNew = 0;
+                    let iOld = 0;
+                    while (iNew < tsConfigFiles.length && iOld < oldConfigFiles.length) {
+                        const newConfig = tsConfigFiles[iNew];
+                        const oldConfig = oldConfigFiles[iOld];
+                        if (oldConfig < newConfig) {
+                            if (this.closeConfiguredProject(oldConfig)) {
+                                shouldRefreshInferredProjects = true;
+                            }
+                            iOld++;
+                        }
+                        else if (oldConfig > newConfig) {
+                            iNew++;
+                        }
+                        else {
+                            const proj = this.findConfiguredProjectByProjectName(oldConfig);
+                            if (proj) {
+                                // delete open ref to compensate addition later
+                                proj.deleteOpenRef();
+                            }
+                            iOld++;
+                            iNew++;
+                        }
+                    }
+                    for (let i = iOld; i < oldConfigFiles.length; i++) {
+                        // all remaining old config files should be closed
+                        if (this.closeConfiguredProject(oldConfigFiles[i])) {
+                            shouldRefreshInferredProjects = true;
+                        }
+                    }
+                }
+            }
+
             if (tsConfigFiles) {
                 // store the list of tsconfig files that belong to the external project
                 this.externalProjectToConfiguredProjectMap[proj.projectFileName] = tsConfigFiles;
@@ -1217,7 +1285,12 @@ namespace ts.server {
                 }
             }
             else {
+                delete this.externalProjectToConfiguredProjectMap[proj.projectFileName];
                 this.createAndAddExternalProject(proj.projectFileName, rootFiles, proj.options, proj.typingOptions);
+            }
+
+            if (shouldRefreshInferredProjects) {
+                this.refreshInferredProjects();
             }
         }
     }
