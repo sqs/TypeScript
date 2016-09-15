@@ -10184,29 +10184,14 @@ namespace ts {
             return createIndexInfo(unionType, /*isReadonly*/ false);
         }
 
-        function getSpreadType(spreads: Type[], properties: Symbol[]): SpreadType {
-            // TODO: Early exit (error cases and caching)
-            const id = getTypeListId(spreads);
-            const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
-            const type: SpreadType = spreadTypes[id] = <SpreadType>createObjectType(TypeFlags.Spread | propagatedFlags);
-            type.types = spreads;
-            // TODO: This actually needs all the normal processing that usually occurs inside checkObjectLiteral
-            // although a lot of that is now deferred, I guess.
-            type.properties = properties;
-            return type;
-        }
-
         function checkObjectLiteral(node: ObjectLiteralExpression, contextualMapper?: TypeMapper): Type {
             const inDestructuringPattern = isAssignmentTarget(node);
             // Grammar checking
             checkGrammarObjectLiteralExpression(node, inDestructuringPattern);
-            if (find(node.properties, p => p.kind === SyntaxKind.SpreadElement)) {
-                // TODO: Need to get types of the spread elements and symbols of the non-spread elements
-                return getSpreadType(node.properties.filter(p => p.kind === SyntaxKind.SpreadElement), node.properties.filter(p => p.kind !== SyntaxKind.SpreadElement));
-            }
 
-            const propertiesTable = createMap<Symbol>();
-            const propertiesArray: Symbol[] = [];
+            let propertiesTable = createMap<Symbol>();
+            let propertiesArray: Symbol[] = []; // this should really just be Object.values(propertiesTable)
+            let spreads: Type[] = [];
             const contextualType = getApparentTypeOfContextualType(node);
             const contextualTypeHasPattern = contextualType && contextualType.pattern &&
                 (contextualType.pattern.kind === SyntaxKind.ObjectBindingPattern || contextualType.pattern.kind === SyntaxKind.ObjectLiteralExpression);
@@ -10277,39 +10262,19 @@ namespace ts {
                     member = prop;
                 }
                 else if (memberDecl.kind === SyntaxKind.SpreadElement) {
-                    // push a whole bunch of stuff into propertiesArray
-                    const des = memberDecl as SpreadElement;
-                    // TODO: Make sure des.target's type gets set to something besides any
-                    const type = checkExpression(des.target) as ResolvedType;
-                    for (let member of getPropertiesOfType(type)) {
-                        if (member.valueDeclaration.kind === SyntaxKind.MethodDeclaration) {
-                            // methods are not enumerable, so they are not copied by Object.assign
-                            continue;
-                        }
-                        if (hasProperty(propertiesTable, member.name)) {
-                            const newPropType = getTypeOfSymbol(member);
-                            const existingPropType = getTypeOfSymbol(propertiesTable[member.name]);
-                            if (!isTypeIdenticalTo(newPropType, existingPropType)) {
-                                error(des.target, Diagnostics.Cannot_change_type_of_property_0_from_1_to_2, member.name, typeToString(existingPropType), typeToString(newPropType));
-                            }
-                        }
-                        if (member.flags & SymbolFlags.SetAccessor && !(member.flags & SymbolFlags.GetAccessor)) {
-                            error(des.target, Diagnostics.Cannot_spread_property_0_because_it_does_not_have_a_get_accessor, member.name);
-                        }
-                        if (member.flags & SymbolFlags.GetAccessor) {
-                            const prop = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient | (member.flags ^ SymbolFlags.GetAccessor), member.name);
-                            prop.declarations = member.declarations;
-                            prop.parent = member.parent;
-                            if (member.valueDeclaration) {
-                                prop.valueDeclaration = member.valueDeclaration;
-                            }
-                            prop.target = member;
-                            prop.type = getTypeOfSymbol(member);
-                            member = prop;
-                        }
-                        propertiesArray.push(member);
-                        propertiesTable[member.name] = member;
+                    if (propertiesArray.length > 0) {
+                        // TODO: The aggregation of indexers could be better since when we access index info on the spread type,
+                        // we'll have to recompute it, and maybe we could save time by representing it in a special way at this point.
+                        const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
+                        const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
+                        // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
+                        spreads.push(createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo));
+                        propertiesArray = [];
+                        propertiesTable = createMap<Symbol>();
+                        hasComputedStringProperty = false;
+                        hasComputedNumberProperty = false;
                     }
+                    spreads.push(checkExpression((memberDecl as SpreadElement).target));
                     continue;
                 }
                 else {
@@ -10334,6 +10299,19 @@ namespace ts {
                     propertiesTable[member.name] = member;
                 }
                 propertiesArray.push(member);
+            }
+
+            if (spreads.length > 0) {
+                // TODO: error cases
+                // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
+                const id = getTypeListId(spreads);
+                if (id in spreadTypes) {
+                    return spreadTypes[id];
+                }
+                const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
+                const type: SpreadType = spreadTypes[id] = <SpreadType>createObjectType(TypeFlags.Spread | propagatedFlags);
+                type.types = spreads;
+                return type;
             }
 
             // If object literal is contextually typed by the implied type of a binding pattern, augment the result
