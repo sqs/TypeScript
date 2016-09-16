@@ -2171,6 +2171,9 @@ namespace ts {
                     else if (type.flags & TypeFlags.UnionOrIntersection) {
                         writeUnionOrIntersectionType(<UnionOrIntersectionType>type, nextFlags);
                     }
+                    else if (type.flags & TypeFlags.Spread) {
+                        writeSpreadType(<SpreadType>type, nextFlags);
+                    }
                     else if (type.flags & TypeFlags.Anonymous) {
                         writeAnonymousType(<ObjectType>type, nextFlags);
                     }
@@ -2276,6 +2279,26 @@ namespace ts {
                     if (flags & TypeFormatFlags.InElementType) {
                         writePunctuation(writer, SyntaxKind.CloseParenToken);
                     }
+                }
+
+                function writeSpreadType(type: SpreadType, flags: TypeFormatFlags) {
+                    // Ultimately you'll want to actually instantiate all the properties the way you would in a real system.
+                    // I think. Or just keep a boolean list of what was originally spread or not.
+                    // Or take a look at the original declaration? Or take a look FOR the original declaration -- if there's not one, it's synthetic
+                    // and should be flattened.
+                    // ANYWAY. I think the code will look a lot like writeLiteralType at that point. So start there.
+                    writePunctuation(writer, SyntaxKind.OpenBraceToken);
+                    writeSpace(writer);
+                    for (let i = 0; i < type.types.length; i++) {
+                        if (i > 0) {
+                            writePunctuation(writer, SyntaxKind.CommaToken);
+                            writeSpace(writer);
+                        }
+                        writePunctuation(writer, SyntaxKind.DotDotDotToken);
+                        writeType(type.types[i], TypeFormatFlags.None);
+                    }
+                    writeSpace(writer);
+                    writePunctuation(writer, SyntaxKind.CloseBraceToken);
                 }
 
                 function writeAnonymousType(type: ObjectType, flags: TypeFormatFlags) {
@@ -4278,6 +4301,12 @@ namespace ts {
             setObjectTypeMembers(type, emptySymbols, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         }
 
+        function resolveSpreadTypeMembers(type: SpreadType) {
+            // TODO: Write code in getPropertiesOfType (and elsewhere) to return properties of a spread type
+            // OR: Write the code here. But I think that it's actually too early
+            setObjectTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+        }
+
         function resolveAnonymousTypeMembers(type: AnonymousType) {
             const symbol = type.symbol;
             if (type.target) {
@@ -4343,6 +4372,9 @@ namespace ts {
                 }
                 else if (type.flags & TypeFlags.Intersection) {
                     resolveIntersectionTypeMembers(<IntersectionType>type);
+                }
+                else if (type.flags & TypeFlags.Spread) {
+                    resolveSpreadTypeMembers(<SpreadType>type);
                 }
             }
             return <ResolvedType>type;
@@ -5551,7 +5583,45 @@ namespace ts {
             const links = getNodeLinks(node);
             if (!links.resolvedType) {
                 // Deferred resolution of members is handled by resolveObjectTypeMembers
-                const type = createObjectType(TypeFlags.Anonymous, node.symbol);
+                // ... I HOPE
+                const isSpread = (node.kind === SyntaxKind.TypeLiteral &&
+                                  find((node as TypeLiteralNode).members, elt => elt.kind === SyntaxKind.SpreadTypeElement));
+                let type: ObjectType;
+                if (isSpread) {
+                    let members = createMap<Symbol>();
+                    const types: Type[] = [];
+                    for (const e of (node as TypeLiteralNode).members) {
+                        if (e.kind === SyntaxKind.SpreadTypeElement) {
+                            if (members) {
+                                types.push(createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined));
+                                members = undefined;
+                            }
+                            types.push(getTypeFromTypeNode((e as SpreadTypeElement).type));
+                        }
+                        else {
+                            // TODO: Copied from getTypeFromObjectBinding, but slimmed down enough that it's surely missing a lot of things
+                            const name = <Identifier>e.name;
+                            const text = getTextOfPropertyName(name);
+                            // TODO: Creating a symbol should already have a function that I can just call
+                            const flags = SymbolFlags.Property | SymbolFlags.Transient;
+                            const symbol = <TransientSymbol>createSymbol(flags, text);
+                            if (e.kind === SyntaxKind.PropertySignature) {
+                                // TODO:e could be a bunch of things, but ignore things like computed properties for now ...
+                                symbol.type = getTypeFromTypeNodeNoAlias((e as PropertySignature).type);
+                            }
+                            if (!members) {
+                                members = createMap<Symbol>();
+                            }
+                            members[symbol.name] = symbol;
+                        }
+                    }
+                    const spread = createObjectType(TypeFlags.Spread, node.symbol) as SpreadType;
+                    spread.types = types;
+                    return spread;
+                }
+                else {
+                    type = createObjectType(TypeFlags.Anonymous, node.symbol);
+                }
                 type.aliasSymbol = aliasSymbol;
                 type.aliasTypeArguments = aliasTypeArguments;
                 links.resolvedType = type;
@@ -10191,7 +10261,7 @@ namespace ts {
 
             let propertiesTable = createMap<Symbol>();
             let propertiesArray: Symbol[] = []; // this should really just be Object.values(propertiesTable)
-            let spreads: Type[] = [];
+            const spreads: Type[] = [];
             const contextualType = getApparentTypeOfContextualType(node);
             const contextualTypeHasPattern = contextualType && contextualType.pattern &&
                 (contextualType.pattern.kind === SyntaxKind.ObjectBindingPattern || contextualType.pattern.kind === SyntaxKind.ObjectLiteralExpression);

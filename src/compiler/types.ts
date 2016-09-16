@@ -317,7 +317,7 @@ namespace ts {
         PropertyAssignment,
         ShorthandPropertyAssignment,
         SpreadElement, // maybe name it SpreadProperty?
-        SpreadTypeElement,
+        SpreadTypeElement, // maybe name it SpreadTypeNode?
 
 
         // Enum
@@ -678,6 +678,7 @@ namespace ts {
         objectAssignmentInitializer?: Expression;
     }
 
+    // @kind(SyntaxKind.SpreadElementExpression)
     export interface SpreadElement extends ObjectLiteralElement {
         dotDotDotToken: Node;
         target: Expression;
@@ -2518,10 +2519,7 @@ namespace ts {
 
     export interface IntersectionType extends UnionOrIntersectionType { }
 
-    export interface SpreadType extends UnionOrIntersectionType {
-        members: SymbolTable;
-        properties: Symbol[];
-    }
+    export interface SpreadType extends UnionOrIntersectionType { }
 
     /* @internal */
     // An instantiated anonymous type has a target and a mapper
@@ -2531,7 +2529,7 @@ namespace ts {
     }
 
     /* @internal */
-    // Resolved object, union, or intersection type
+    // Resolved object, spread, union, or intersection type
     export interface ResolvedType extends ObjectType, UnionOrIntersectionType {
         members: SymbolTable;              // Properties by name
         properties: Symbol[];              // Properties
