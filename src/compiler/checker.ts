@@ -4414,6 +4414,15 @@ namespace ts {
             return type.resolvedProperties ? symbolsToArray(type.resolvedProperties) : emptyArray;
         }
 
+        function getPropertiesOfSpreadType(type: SpreadType): Symbol[] {
+            for (const current of type.types) {
+                for (const prop of getPropertiesOfType(current)) {
+                    getPropertyOfSpreadType(type, prop.name);
+                }
+            }
+            return type.resolvedProperties ? symbolsToArray(type.resolvedProperties) : emptyArray;
+        }
+
         function getPropertiesOfType(type: Type): Symbol[] {
             type = getApparentType(type);
             return type.flags & TypeFlags.UnionOrIntersection ? getPropertiesOfUnionOrIntersectionType(<UnionType>type) : getPropertiesOfObjectType(type);
@@ -4486,6 +4495,10 @@ namespace ts {
                     }
                 }
             }
+            return createUnionOrIntersectionOrSpreadPropertySymbol(name, props, commonFlags, ModifierFlags.None, isReadonly, containingType);
+        }
+
+        function createUnionOrIntersectionOrSpreadPropertySymbol(name: string, props: Symbol[], flags: SymbolFlags, modifiers: ModifierFlags, isReadonly: boolean, containingType: UnionOrIntersectionType) {
             if (!props) {
                 return undefined;
             }
@@ -4513,13 +4526,13 @@ namespace ts {
                 SymbolFlags.Property |
                 SymbolFlags.Transient |
                 SymbolFlags.SyntheticProperty |
-                commonFlags,
+                flags,
                 name);
             result.containingType = containingType;
             result.hasCommonType = hasCommonType;
             result.declarations = declarations;
             result.isReadonly = isReadonly;
-            result.type = containingType.flags & TypeFlags.Union ? getUnionType(propTypes) : getIntersectionType(propTypes);
+            result.type = containingType.flags & (TypeFlags.Union | TypeFlags.Spread) ? getUnionType(propTypes) : getIntersectionType(propTypes);
             return result;
         }
 
@@ -4528,6 +4541,49 @@ namespace ts {
             let property = properties[name];
             if (!property) {
                 property = createUnionOrIntersectionProperty(type, name);
+                if (property) {
+                    properties[name] = property;
+                }
+            }
+            return property;
+        }
+
+        function createSpreadProperty(containingType: SpreadType, name: string): Symbol {
+            // TODO: Could probably merge this with createUnionOrIntersectionProperty with a couple of maybe-shifty conditionals
+            // and it would probably be better than 6 (six!) arguments to the completely-shared code
+            const types = containingType.types;
+            let props: Symbol[];
+            let isPrivateProtected: ModifierFlags = ModifierFlags.None;
+            let isReadonly = false;
+            for (let i = types.length - 1; i > -1; i--) {
+                const type = getApparentType(types[i]);
+                if (type !== unknownType) {
+                    const prop = getPropertyOfType(type, name);
+                    if (prop) {
+                        if (!props) {
+                            props = [prop];
+                        }
+                        else if (!contains(props, prop)) {
+                            props.unshift(prop);
+                        }
+                        if (isReadonlySymbol(prop)) {
+                            isReadonly = true;
+                        }
+                        isPrivateProtected |= getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected);
+                        if (!(prop.flags & SymbolFlags.Optional)) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return createUnionOrIntersectionOrSpreadPropertySymbol(name, props, SymbolFlags.None, isPrivateProtected, isReadonly, containingType);
+        }
+
+        function getPropertyOfSpreadType(type: SpreadType, name: string): Symbol {
+            const properties = type.resolvedProperties || (type.resolvedProperties = createMap<Symbol>());
+            let property = properties[name];
+            if (!property) {
+                property = createSpreadProperty(type, name);
                 if (property) {
                     properties[name] = property;
                 }
