@@ -290,13 +290,14 @@ namespace ts.server {
         }
 
         getFormatCodeOptions(file?: NormalizedPath) {
+            let formatCodeSettings: FormatCodeSettings;
             if (file) {
                 const info = this.getScriptInfoForNormalizedPath(file);
                 if (info) {
-                    return info.formatCodeSettings;
+                    formatCodeSettings = info.getFormatCodeSettings();
                 }
             }
-            return this.hostConfiguration.formatCodeOptions;
+            return formatCodeSettings || this.hostConfiguration.formatCodeOptions;
         }
 
         private updateProjectGraphs(projects: Project[]) {
