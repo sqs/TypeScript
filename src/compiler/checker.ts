@@ -4302,8 +4302,18 @@ namespace ts {
         }
 
         function resolveSpreadTypeMembers(type: SpreadType) {
-            // TODO: Write code in getPropertiesOfType (and elsewhere) to return properties of a spread type
-            // OR: Write the code here. But I think that it's actually too early
+            // The members and properties collections are empty for spread types. To get all properties of an
+            // spread type use getPropertiesOfType (only the language service uses this).
+            let stringIndexInfo: IndexInfo = undefined;
+            let numberIndexInfo: IndexInfo = undefined;
+            for (let i = type.types.length - 1; i > -1; i--) {
+                const t = type.types[i];
+                stringIndexInfo = intersectIndexInfos(stringIndexInfo, getIndexInfoOfType(t, IndexKind.String));
+                numberIndexInfo = intersectIndexInfos(numberIndexInfo, getIndexInfoOfType(t, IndexKind.Number));
+                if (!(t.symbol.flags & SymbolFlags.Optional)) {
+                    break;
+                }
+            }
             setObjectTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         }
 
@@ -5656,8 +5666,6 @@ namespace ts {
         function getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(node: Node, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
             const links = getNodeLinks(node);
             if (!links.resolvedType) {
-                // Deferred resolution of members is handled by resolveObjectTypeMembers
-                // ... I HOPE
                 const isSpread = (node.kind === SyntaxKind.TypeLiteral &&
                                   find((node as TypeLiteralNode).members, elt => elt.kind === SyntaxKind.SpreadTypeElement));
                 let type: ObjectType;
@@ -5674,6 +5682,7 @@ namespace ts {
                         }
                         else {
                             // TODO: Copied from getTypeFromObjectBinding, but slimmed down enough that it's surely missing a lot of things
+                            // TODO: Put errors back in someday.
                             const name = <Identifier>e.name;
                             const text = getTextOfPropertyName(name);
                             // TODO: Creating a symbol should already have a function that I can just call
@@ -5689,9 +5698,7 @@ namespace ts {
                             members[symbol.name] = symbol;
                         }
                     }
-                    const spread = createObjectType(TypeFlags.Spread, node.symbol) as SpreadType;
-                    spread.types = types;
-                    return spread;
+                    return getSpreadType(types, node.symbol);
                 }
                 else {
                     type = createObjectType(TypeFlags.Anonymous, node.symbol);
@@ -5701,6 +5708,18 @@ namespace ts {
                 links.resolvedType = type;
             }
             return links.resolvedType;
+        }
+
+        function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
+            const id = getTypeListId(types);
+            if (id in spreadTypes) {
+                return spreadTypes[id];
+            }
+            const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
+            spread.types = types;
+            spread.aliasSymbol = aliasSymbol;
+            spread.aliasTypeArguments = aliasTypeArguments;
+            return spread;
         }
 
         function createLiteralType(flags: TypeFlags, text: string) {
@@ -6092,6 +6111,9 @@ namespace ts {
                 }
                 if (type.flags & TypeFlags.Intersection) {
                     return getIntersectionType(instantiateList((<IntersectionType>type).types, mapper, instantiateType), type.aliasSymbol, mapper.targetTypes);
+                }
+                if (type.flags & TypeFlags.Spread) {
+                    return getSpreadType(instantiateList((type as SpreadType).types, mapper, instantiateType), type.symbol, type.aliasSymbol, mapper.targetTypes);
                 }
             }
             return type;
@@ -10448,14 +10470,10 @@ namespace ts {
             if (spreads.length > 0) {
                 // TODO: error cases
                 // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                const id = getTypeListId(spreads);
-                if (id in spreadTypes) {
-                    return spreadTypes[id];
-                }
                 const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
-                const type: SpreadType = spreadTypes[id] = <SpreadType>createObjectType(TypeFlags.Spread | propagatedFlags);
-                type.types = spreads;
-                return type;
+                const spread = getSpreadType(spreads, node.symbol);
+                spread.flags |= propagatedFlags;
+                return spread;
             }
 
             // If object literal is contextually typed by the implied type of a binding pattern, augment the result
