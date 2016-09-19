@@ -1,6 +1,8 @@
 // @target: es5
 let o = { a: 1, b: 'no' }
 let o2 = { b: 'yes', c: true }
+let swap = { a: 'yes', b: -1 };
+
 let addAfter = { ...o, c: false }
 let addBefore = { c: false, ...o }
 // Note: ignore still changes the order that properties are printed
@@ -16,6 +18,10 @@ let combinedNested = {
     d: 'actually new',
     ...{ a: 5, d: 'maybe new' },
 }
+let combinedNestedChangeType = {
+    ...{ a: 1, ...{ b: false, c: 'overriden' } },
+    c: -1
+}
 let propertyNested = { a: { ... o } }
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
@@ -30,6 +36,11 @@ let spreadUndefined = { ...undefined }
 class C { p = 1; m() { } }
 let c: C = new C()
 let spreadC = {...c}
+
+// new field's type conflicts with existing field
+let changeTypeAfter = { ...o, a: 'wrong type?' }
+let changeTypeBefore = { a: 'wrong type?', ...o }
+let changeTypeBoth = { ...o, ...swap };
 
 // computed property
 let computedFirst = {
@@ -57,11 +68,11 @@ let exclusive: { id: string, a: number, b: string, c: string, d: boolean } =
     f({ a: 1, b: 'yes' }, { c: 'no', d: false })
 let overlap: { id: string, a: number, b: string } =
     f({ a: 1 }, { a: 2, b: 'extra' })
-let overlapConflict: { id:string, a: number & string } =
+let overlapConflict: { id:string, a: string } =
     f({ a: 1 }, { a: 'mismatch' })
-let overwriteId: { id: string, a: number, d: string } =
-    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' })
+let overwriteId: { id: boolean, a: number, c: number, d: string } =
+    f({ a: 1, id: true }, { c: 1, d: 'no' })
 
 class D { m() { }; q = 2; }
-let classesAreWrong: /*{ id: string, ...C., ...D }*/ =
+let classesAreWrong: { id: string, ...C, ...D } =
     f(new C(), new D())

@@ -1,21 +1,26 @@
 // @target: es5
-let o = { a: 1, b: 'no' };
-let swap = { a: 'yes', b: -1 };
+let o = { a: 1, b: 'no' }
 
-// new field's type conflicts with existing field
-let o2 = { ...o, a: 'wrong type?' }
-let o3 = { a: 'wrong type?', ...o }
-let o4 = { ...o, ...swap };
-let combinedNested = {
-    ...{ a: 1, ...{ b: false, c: 'overriden' } },
-    c: -1 // error, number not assignable to string
+/// private propagates
+class PrivateOptionalX {
+    private x?: number;
 }
+class PublicX {
+    public x: number;
+}
+let privateOptionalx: PrivateOptionalX;
+let publicx: PublicX;
+let o3 = { ...publicx, ...privateOptionalx };
+let sn: string | number = o3.x; // error, x is private
+
 // expressions are not allowed
-let o5 = { ...1 + 1 };
-let o6 = { ...(1 + 1) };
+let o1 = { ...1 + 1 };
+let o2 = { ...(1 + 1) };
 
-// repeats are not allowed
+// literal repeats are not allowed, but spread repeats are fine
 let duplicated = { b: 'bad', ...o, b: 'bad', ...o2, b: 'bad' }
+let duplicatedSpread = { ...o, ...o }
 
-// spreading write-only properties is not allowed
+// write-only properties get skipped
 let setterOnly = { ...{ set b (bad: number) { } } };
+setterOnly.b = 12; // error, 'b' does not exist
