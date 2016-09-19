@@ -4504,18 +4504,18 @@ namespace ts {
                         }
                         else if (containingType.flags & TypeFlags.Union) {
                             // A union type requires the property to be present in all constituent types
-                            return [undefined, false, 0, undefined];
+                            return [undefined, false, 0];
                         }
                     }
                 }
-                return [props, isReadonly, commonFlags, undefined];
+                return [props, isReadonly, commonFlags];
             });
         }
 
         function createUnionOrIntersectionOrSpreadPropertySymbol(containingType: UnionOrIntersectionType,
                                                                  name: string,
-                                                                 symbolCreator: () => [Symbol[], boolean, SymbolFlags, Symbol]) {
-            const [props, isReadonly, flags, privateSymbol] = symbolCreator();
+                                                                 symbolCreator: () => [Symbol[], boolean, SymbolFlags]) {
+            const [props, isReadonly, flags] = symbolCreator();
             if (!props) {
                 return undefined;
             }
@@ -4549,11 +4549,6 @@ namespace ts {
             result.hasCommonType = hasCommonType;
             result.declarations = declarations;
             result.isReadonly = isReadonly;
-            if (privateSymbol) {
-                // TODO: This is *likely* the wrong way to make sure getModifierFlags returns private for the new symbol.
-                // (setting valueDeclaration has tons of other side effects)
-                result.valueDeclaration = privateSymbol.valueDeclaration;
-            }
             result.type = containingType.flags & (TypeFlags.Union | TypeFlags.Spread) ? getUnionType(propTypes) : getIntersectionType(propTypes);
             return result;
         }
@@ -4574,13 +4569,16 @@ namespace ts {
             const types = containingType.types;
             return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
                 let props: Symbol[];
-                let firstPrivateSymbol: Symbol;
+                let isPrivate = false;
                 let isReadonly = false;
                 for (let i = types.length - 1; i > -1; i--) {
                     const type = getApparentType(types[i]);
                     if (type !== unknownType) {
                         const prop = getPropertyOfType(type, name);
                         if (prop) {
+                            if (prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
+                                continue;
+                            }
                             if (!props) {
                                 props = [prop];
                             }
@@ -4590,9 +4588,8 @@ namespace ts {
                             if (isReadonlySymbol(prop)) {
                                 isReadonly = true;
                             }
-                            if (!firstPrivateSymbol &&
-                                getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
-                                firstPrivateSymbol = prop;
+                            if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+                                return [undefined, false, 0];
                             }
                             if (!(prop.flags & SymbolFlags.Optional)) {
                                 break;
@@ -4600,7 +4597,7 @@ namespace ts {
                         }
                     }
                 }
-                return [props, isReadonly, SymbolFlags.None, firstPrivateSymbol];
+                return [props, isReadonly, SymbolFlags.None];
             });
         }
 
@@ -6668,7 +6665,7 @@ namespace ts {
                     // In a check of the form X = A & B, we will have previously checked if A relates to X or B relates
                     // to X. Failing both of those we want to check if the aggregation of A and B's members structurally
                     // relates to X. Thus, we include intersection types on the source side here.
-                    if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection) && target.flags & TypeFlags.ObjectType) {
+                    if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection | TypeFlags.Spread) && target.flags & TypeFlags.ObjectType) {
                         // Report structural errors only if we haven't reported any errors yet
                         const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo && !(source.flags & TypeFlags.Primitive);
                         if (result = objectTypeRelatedTo(apparentSource, source, target, reportStructuralErrors)) {

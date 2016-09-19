@@ -1,57 +1,47 @@
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(5,18): error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(6,33): error TS2694: Cannot change type of property 'a' from 'string' to 'number'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(7,21): error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(7,21): error TS2694: Cannot change type of property 'b' from 'string' to 'number'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(10,5): error TS2694: Cannot change type of property 'c' from 'string' to 'number'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(13,15): error TS2693: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(14,15): error TS2693: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(17,36): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(17,49): error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(17,53): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,23): error TS2695: Cannot spread property 'b' because it does not have a 'get' accessor.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(13,30): error TS2339: Property 'x' does not exist on type '{ ...PublicX, ...PrivateOptionalX }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(16,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(17,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,36): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,53): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(25,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
 
 
-==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (11 errors) ====
-    let o = { a: 1, b: 'no' };
-    let swap = { a: 'yes', b: -1 };
+==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (6 errors) ====
+    let o = { a: 1, b: 'no' }
     
-    // new field's type conflicts with existing field
-    let o2 = { ...o, a: 'wrong type?' }
-                     ~
-!!! error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
-    let o3 = { a: 'wrong type?', ...o }
-                                    ~
-!!! error TS2694: Cannot change type of property 'a' from 'string' to 'number'.
-    let o4 = { ...o, ...swap };
-                        ~~~~
-!!! error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
-                        ~~~~
-!!! error TS2694: Cannot change type of property 'b' from 'string' to 'number'.
-    let combinedNested = {
-        ...{ a: 1, ...{ b: false, c: 'overriden' } },
-        c: -1 // error, number not assignable to string
-        ~
-!!! error TS2694: Cannot change type of property 'c' from 'string' to 'number'.
+    /// private propagates
+    class PrivateOptionalX {
+        private x?: number;
     }
-    // expressions are not allowed
-    let o5 = { ...1 + 1 };
-                  ~~~~~
-!!! error TS2693: Spread properties must be identifiers, property accesses, or object literals.
-    let o6 = { ...(1 + 1) };
-                  ~~~~~~~
-!!! error TS2693: Spread properties must be identifiers, property accesses, or object literals.
+    class PublicX {
+        public x: number;
+    }
+    let privateOptionalx: PrivateOptionalX;
+    let publicx: PublicX;
+    let o3 = { ...publicx, ...privateOptionalx };
+    let sn: string | number = o3.x; // error, x is private
+                                 ~
+!!! error TS2339: Property 'x' does not exist on type '{ ...PublicX, ...PrivateOptionalX }'.
     
-    // repeats are not allowed
+    // expressions are not allowed
+    let o1 = { ...1 + 1 };
+                  ~~~~~
+!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+    let o2 = { ...(1 + 1) };
+                  ~~~~~~~
+!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+    
+    // literal repeats are not allowed, but spread repeats are fine
     let duplicated = { b: 'bad', ...o, b: 'bad', ...o2, b: 'bad' }
                                        ~
 !!! error TS2300: Duplicate identifier 'b'.
-                                                    ~~
-!!! error TS2694: Cannot change type of property 'a' from 'number' to 'string'.
                                                         ~
 !!! error TS2300: Duplicate identifier 'b'.
+    let duplicatedSpread = { ...o, ...o }
     
-    // spreading write-only properties is not allowed
+    // write-only properties get skipped
     let setterOnly = { ...{ set b (bad: number) { } } };
-                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!!! error TS2695: Cannot spread property 'b' because it does not have a 'get' accessor.
+    setterOnly.b = 12; // error, 'b' does not exist
+               ~
+!!! error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
     
