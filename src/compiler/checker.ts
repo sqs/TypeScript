@@ -4425,7 +4425,9 @@ namespace ts {
 
         function getPropertiesOfType(type: Type): Symbol[] {
             type = getApparentType(type);
-            return type.flags & TypeFlags.UnionOrIntersection ? getPropertiesOfUnionOrIntersectionType(<UnionType>type) : getPropertiesOfObjectType(type);
+            return type.flags & TypeFlags.UnionOrIntersection ? getPropertiesOfUnionOrIntersectionType(<UnionType>type) :
+                type.flags & TypeFlags.Spread ? getPropertiesOfSpreadType(<SpreadType>type) :
+                getPropertiesOfObjectType(type);
         }
 
         /**
@@ -4469,36 +4471,41 @@ namespace ts {
 
         function createUnionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: string): Symbol {
             const types = containingType.types;
-            let props: Symbol[];
-            // Flags we want to propagate to the result if they exist in all source symbols
-            let commonFlags = (containingType.flags & TypeFlags.Intersection) ? SymbolFlags.Optional : SymbolFlags.None;
-            let isReadonly = false;
-            for (const current of types) {
-                const type = getApparentType(current);
-                if (type !== unknownType) {
-                    const prop = getPropertyOfType(type, name);
-                    if (prop && !(getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected))) {
-                        commonFlags &= prop.flags;
-                        if (!props) {
-                            props = [prop];
+            return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
+                let props: Symbol[];
+                // Flags we want to propagate to the result if they exist in all source symbols
+                let commonFlags = (containingType.flags & TypeFlags.Intersection) ? SymbolFlags.Optional : SymbolFlags.None;
+                let isReadonly = false;
+                for (const current of types) {
+                    const type = getApparentType(current);
+                    if (type !== unknownType) {
+                        const prop = getPropertyOfType(type, name);
+                        if (prop && !(getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected))) {
+                            commonFlags &= prop.flags;
+                            if (!props) {
+                                props = [prop];
+                            }
+                            else if (!contains(props, prop)) {
+                                props.push(prop);
+                            }
+                            if (isReadonlySymbol(prop)) {
+                                isReadonly = true;
+                            }
                         }
-                        else if (!contains(props, prop)) {
-                            props.push(prop);
+                        else if (containingType.flags & TypeFlags.Union) {
+                            // A union type requires the property to be present in all constituent types
+                            return [undefined, false, 0, undefined];
                         }
-                        if (isReadonlySymbol(prop)) {
-                            isReadonly = true;
-                        }
-                    }
-                    else if (containingType.flags & TypeFlags.Union) {
-                        // A union type requires the property to be present in all constituent types
-                        return undefined;
                     }
                 }
-            }
-            return createUnionOrIntersectionOrSpreadPropertySymbol(name, props, commonFlags, ModifierFlags.None, isReadonly, containingType);
+                return [props, isReadonly, commonFlags, undefined];
+            });
         }
 
-        function createUnionOrIntersectionOrSpreadPropertySymbol(name: string, props: Symbol[], flags: SymbolFlags, modifiers: ModifierFlags, isReadonly: boolean, containingType: UnionOrIntersectionType) {
+        function createUnionOrIntersectionOrSpreadPropertySymbol(containingType: UnionOrIntersectionType,
+                                                                 name: string,
+                                                                 symbolCreator: () => [Symbol[], boolean, SymbolFlags, Symbol]) {
+            const [props, isReadonly, flags, privateSymbol] = symbolCreator();
             if (!props) {
                 return undefined;
             }
@@ -4532,6 +4539,11 @@ namespace ts {
             result.hasCommonType = hasCommonType;
             result.declarations = declarations;
             result.isReadonly = isReadonly;
+            if (privateSymbol) {
+                // TODO: This is *likely* the wrong way to make sure getModifierFlags returns private for the new symbol.
+                // (setting valueDeclaration has tons of other side effects)
+                result.valueDeclaration = privateSymbol.valueDeclaration;
+            }
             result.type = containingType.flags & (TypeFlags.Union | TypeFlags.Spread) ? getUnionType(propTypes) : getIntersectionType(propTypes);
             return result;
         }
@@ -4549,34 +4561,37 @@ namespace ts {
         }
 
         function createSpreadProperty(containingType: SpreadType, name: string): Symbol {
-            // TODO: Could probably merge this with createUnionOrIntersectionProperty with a couple of maybe-shifty conditionals
-            // and it would probably be better than 6 (six!) arguments to the completely-shared code
             const types = containingType.types;
-            let props: Symbol[];
-            let isPrivateProtected: ModifierFlags = ModifierFlags.None;
-            let isReadonly = false;
-            for (let i = types.length - 1; i > -1; i--) {
-                const type = getApparentType(types[i]);
-                if (type !== unknownType) {
-                    const prop = getPropertyOfType(type, name);
-                    if (prop) {
-                        if (!props) {
-                            props = [prop];
-                        }
-                        else if (!contains(props, prop)) {
-                            props.unshift(prop);
-                        }
-                        if (isReadonlySymbol(prop)) {
-                            isReadonly = true;
-                        }
-                        isPrivateProtected |= getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected);
-                        if (!(prop.flags & SymbolFlags.Optional)) {
-                            break;
+            return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
+                let props: Symbol[];
+                let firstPrivateSymbol: Symbol;
+                let isReadonly = false;
+                for (let i = types.length - 1; i > -1; i--) {
+                    const type = getApparentType(types[i]);
+                    if (type !== unknownType) {
+                        const prop = getPropertyOfType(type, name);
+                        if (prop) {
+                            if (!props) {
+                                props = [prop];
+                            }
+                            else if (!contains(props, prop)) {
+                                props.unshift(prop);
+                            }
+                            if (isReadonlySymbol(prop)) {
+                                isReadonly = true;
+                            }
+                            if (!firstPrivateSymbol &&
+                                getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+                                firstPrivateSymbol = prop;
+                            }
+                            if (!(prop.flags & SymbolFlags.Optional)) {
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            return createUnionOrIntersectionOrSpreadPropertySymbol(name, props, SymbolFlags.None, isPrivateProtected, isReadonly, containingType);
+                return [props, isReadonly, SymbolFlags.None, firstPrivateSymbol];
+            });
         }
 
         function getPropertyOfSpreadType(type: SpreadType, name: string): Symbol {
@@ -4617,6 +4632,9 @@ namespace ts {
             }
             if (type.flags & TypeFlags.UnionOrIntersection) {
                 return getPropertyOfUnionOrIntersectionType(<UnionOrIntersectionType>type, name);
+            }
+            if (type.flags & TypeFlags.Spread) {
+                return getPropertyOfSpreadType(<SpreadType>type, name);
             }
             return undefined;
         }
