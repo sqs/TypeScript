@@ -30,9 +30,10 @@ let propertyNested: { a: { a: number, b: string } } =
     { a: { ... o } }
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write properties)
-let op = { get a () { return 6 } }
+let op = { get a () { return 6 } };
 let getter: { a: number, c: number } =
     { ...op, c: 7 }
+getter.a = 12;
 
 // null and undefined are just skipped
 let spreadNull: { a: number } =
@@ -43,7 +44,7 @@ let spreadUndefined: { a: number } =
 // methods are not enumerable
 class C { p = 1; m() { } }
 let c: C = new C()
-let spreadC: { p: number } = {...c}
+let spreadC: { p: number } = { ...c }
 
 // new field's type conflicting with existing field is OK
 let changeTypeAfter: { a: string, b: string } =

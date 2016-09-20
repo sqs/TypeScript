@@ -24,3 +24,9 @@ let duplicatedSpread = { ...o, ...o }
 // write-only properties get skipped
 let setterOnly = { ...{ set b (bad: number) { } } };
 setterOnly.b = 12; // error, 'b' does not exist
+
+// methods are skipped because they aren't enumerable
+class C { p = 1; m() { } }
+let c: C = new C()
+let spreadC = { ...c }
+spreadC.m(); // error 'm' is not in '{ ... c }'

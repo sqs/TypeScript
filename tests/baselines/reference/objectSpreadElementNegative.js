@@ -25,6 +25,12 @@ let duplicatedSpread = { ...o, ...o }
 let setterOnly = { ...{ set b (bad: number) { } } };
 setterOnly.b = 12; // error, 'b' does not exist
 
+// methods are skipped because they aren't enumerable
+class C { p = 1; m() { } }
+let c: C = new C()
+let spreadC = { ...c }
+spreadC.m(); // error 'm' is not in '{ ... c }'
+
 
 //// [objectSpreadElementNegative.js]
 var __assign = (this && this.__assign) || Object.assign || function(t) {
@@ -60,3 +66,14 @@ var duplicatedSpread = __assign({}, o, o);
 // write-only properties get skipped
 var setterOnly = __assign({ set b(bad: number) { } });
 setterOnly.b = 12; // error, 'b' does not exist
+// methods are skipped because they aren't enumerable
+var C = (function () {
+    function C() {
+        this.p = 1;
+    }
+    C.prototype.m = function () { };
+    return C;
+}());
+var c = new C();
+var spreadC = __assign({}, c);
+spreadC.m(); // error 'm' is not in '{ ... c }'

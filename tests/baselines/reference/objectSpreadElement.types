@@ -199,7 +199,7 @@ let propertyNested: { a: { a: number, b: string } } =
 
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write properties)
-let op = { get a () { return 6 } }
+let op = { get a () { return 6 } };
 >op : { readonly a: number; }
 >{ get a () { return 6 } } : { readonly a: number; }
 >a : number
@@ -215,6 +215,13 @@ let getter: { a: number, c: number } =
 >op : any
 >c : number
 >7 : 7
+
+getter.a = 12;
+>getter.a = 12 : 12
+>getter.a : number
+>getter : { a: number; c: number; }
+>a : number
+>12 : 12
 
 // null and undefined are just skipped
 let spreadNull: { a: number } =
@@ -250,10 +257,10 @@ let c: C = new C()
 >new C() : C
 >C : typeof C
 
-let spreadC: { p: number } = {...c}
+let spreadC: { p: number } = { ...c }
 >spreadC : { p: number; }
 >p : number
->{...c} : { ...C }
+>{ ...c } : { ...C }
 >c : any
 
 // new field's type conflicting with existing field is OK
