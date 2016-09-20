@@ -4591,7 +4591,9 @@ namespace ts {
                     if (type !== unknownType) {
                         const prop = getPropertyOfType(type, name);
                         if (prop) {
-                            if (prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
+                            if (prop.flags & SymbolFlags.Method ||
+                                prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
+                                // skip methods and set-only properties and keep looking
                                 continue;
                             }
                             if (!props) {
@@ -4604,6 +4606,7 @@ namespace ts {
                                 isReadonly = true;
                             }
                             if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+                                // return immediately because even if prop is optional, it would make the unioned spread property private
                                 return [undefined, false, 0];
                             }
                             if (!(prop.flags & SymbolFlags.Optional)) {
