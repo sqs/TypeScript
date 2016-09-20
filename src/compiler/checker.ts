@@ -10426,8 +10426,6 @@ namespace ts {
                 }
                 else if (memberDecl.kind === SyntaxKind.SpreadElement) {
                     if (propertiesArray.length > 0) {
-                        // TODO: The aggregation of indexers could be better since when we access index info on the spread type,
-                        // we'll have to recompute it, and maybe we could save time by representing it in a special way at this point.
                         const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
                         const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
                         // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
@@ -10465,7 +10463,16 @@ namespace ts {
             }
 
             if (spreads.length > 0) {
-                // TODO: error cases
+                if (propertiesArray.length > 0) {
+                    const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
+                    const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
+                    // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
+                    spreads.push(createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo));
+                    propertiesArray = [];
+                    propertiesTable = createMap<Symbol>();
+                    hasComputedStringProperty = false;
+                    hasComputedNumberProperty = false;
+                }
                 // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
                 const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
                 const spread = getSpreadType(spreads, node.symbol);
