@@ -3,62 +3,63 @@ let o = { a: 1, b: 'no' }
 let o2 = { b: 'yes', c: true }
 let swap = { a: 'yes', b: -1 };
 
-let addAfter = { ...o, c: false }
-let addBefore = { c: false, ...o }
+let addAfter: { a: number, b: string, c: boolean } =
+    { ...o, c: false }
+let addBefore: { a: number, b: string, c: boolean } =
+    { c: false, ...o }
 // Note: ignore still changes the order that properties are printed
-let ignore = { b: 'ignored', ...o }
-let override = { ...o, b: 'override' }
-let nested = { ...{ a: 3, ...{ b: false, c: 'overriden' } }, c: 'whatever' }
-let combined = { ...o, ...o2 }
-let combinedBefore = { b: 'ok', ...o, ...o2 }
-let combinedMid = { ...o, b: 'ok', ...o2 }
-let combinedAfter = { ...o, ...o2, b: 'ok' }
-let combinedNested = {
-    ...{ a: 4, ...{ b: false, c: 'overriden' } },
-    d: 'actually new',
-    ...{ a: 5, d: 'maybe new' },
-}
-let combinedNestedChangeType = {
-    ...{ a: 1, ...{ b: false, c: 'overriden' } },
-    c: -1
-}
-let propertyNested = { a: { ... o } }
+let ignore: { a: number, b: string } =
+    { b: 'ignored', ...o }
+let override: { a: number, b: string } =
+    { ...o, b: 'override' }
+let nested: { a: number, b: boolean, c: string } =
+    { ...{ a: 3, ...{ b: false, c: 'overriden' } }, c: 'whatever' }
+let combined: { a: number, b: string, c: boolean } =
+    { ...o, ...o2 }
+let combinedBefore: { a: number, b: string, c: boolean } =
+    { b: 'ok', ...o, ...o2 }
+let combinedMid: { a: number, b: string, c: boolean } =
+    { ...o, b: 'ok', ...o2 }
+let combinedAfter: { a: number, b: string, c: boolean } =
+    { ...o, ...o2, b: 'ok' }
+let combinedNested: { a: number, b: boolean, c: string, d: string } =
+    { ...{ a: 4, ...{ b: false, c: 'overriden' } }, d: 'actually new', ...{ a: 5, d: 'maybe new' } }
+let combinedNestedChangeType: { a: number, b: boolean, c: number } =
+    { ...{ a: 1, ...{ b: false, c: 'overriden' } }, c: -1 }
+let propertyNested: { a: { a: number, b: string } } =
+    { a: { ... o } }
 // accessors don't copy the descriptor
-// (which means that readonly getters become read/write)
+// (which means that readonly getters become read/write properties)
 let op = { get a () { return 6 } }
-let getter = { ...op, c: 7 }
+let getter: { a: number, c: number } =
+    { ...op, c: 7 }
 
 // null and undefined are just skipped
-let spreadNull = { ...null }
-let spreadUndefined = { ...undefined }
+let spreadNull: { a: number } =
+    { a: 7, ...null }
+let spreadUndefined: { a: number } =
+    { a: 7, ...undefined }
 
 // methods are not enumerable
 class C { p = 1; m() { } }
 let c: C = new C()
-let spreadC = {...c}
+let spreadC: { p: number } = {...c}
 
-// new field's type conflicts with existing field
-let changeTypeAfter = { ...o, a: 'wrong type?' }
-let changeTypeBefore = { a: 'wrong type?', ...o }
-let changeTypeBoth = { ...o, ...swap };
+// new field's type conflicting with existing field is OK
+let changeTypeAfter: { a: string, b: string } =
+    { ...o, a: 'wrong type?' }
+let changeTypeBefore: { a: number, b: string } =
+    { a: 'wrong type?', ...o };
+let changeTypeBoth: { a: string, b: number } =
+    { ...o, ...swap };
 
 // computed property
-let computedFirst = {
-    ['before everything']: 12,
-    ...o,
-    b: 'yes'
-}
-let computedMiddle = {
-    ...o,
-    ['in the middle']: 13,
-    b: 'maybe?',
-    ...o2
-}
-let computedAfter = {
-    ...o,
-    b: 'yeah',
-    ['at the end']: 14
-}
+let computedFirst: { a: number, b: string, "before everything": number } =
+    { ['before everything']: 12, ...o, b: 'yes' }
+let computedMiddle: { a: number, b: string, c: boolean, "in the middle": number } =
+    { ...o, ['in the middle']: 13, b: 'maybe?', ...o2 }
+let computedAfter: { a: number, b: string, "at the end": number } =
+    { ...o, b: 'yeah', ['at the end']: 14 }
 
 // generics
 function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
