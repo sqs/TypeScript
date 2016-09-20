@@ -14,232 +14,300 @@ let swap = { a: 'yes', b: -1 };
 >a : Symbol(a, Decl(objectSpreadElement.ts, 2, 12))
 >b : Symbol(b, Decl(objectSpreadElement.ts, 2, 22))
 
-let addAfter = { ...o, c: false }
+let addAfter: { a: number, b: string, c: boolean } =
 >addAfter : Symbol(addAfter, Decl(objectSpreadElement.ts, 4, 3))
->c : Symbol(c, Decl(objectSpreadElement.ts, 4, 22))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 4, 15))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 4, 26))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 4, 37))
 
-let addBefore = { c: false, ...o }
->addBefore : Symbol(addBefore, Decl(objectSpreadElement.ts, 5, 3))
->c : Symbol(c, Decl(objectSpreadElement.ts, 5, 17))
+    { ...o, c: false }
+>c : Symbol(c, Decl(objectSpreadElement.ts, 5, 11))
+
+let addBefore: { a: number, b: string, c: boolean } =
+>addBefore : Symbol(addBefore, Decl(objectSpreadElement.ts, 6, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 6, 16))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 6, 27))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 6, 38))
+
+    { c: false, ...o }
+>c : Symbol(c, Decl(objectSpreadElement.ts, 7, 5))
 
 // Note: ignore still changes the order that properties are printed
-let ignore = { b: 'ignored', ...o }
->ignore : Symbol(ignore, Decl(objectSpreadElement.ts, 7, 3))
->b : Symbol(b, Decl(objectSpreadElement.ts, 7, 14))
+let ignore: { a: number, b: string } =
+>ignore : Symbol(ignore, Decl(objectSpreadElement.ts, 9, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 9, 13))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 9, 24))
 
-let override = { ...o, b: 'override' }
->override : Symbol(override, Decl(objectSpreadElement.ts, 8, 3))
->b : Symbol(b, Decl(objectSpreadElement.ts, 8, 22))
+    { b: 'ignored', ...o }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 10, 5))
 
-let nested = { ...{ a: 3, ...{ b: false, c: 'overriden' } }, c: 'whatever' }
->nested : Symbol(nested, Decl(objectSpreadElement.ts, 9, 3))
->a : Symbol(a, Decl(objectSpreadElement.ts, 9, 19))
->b : Symbol(b, Decl(objectSpreadElement.ts, 9, 30))
->c : Symbol(c, Decl(objectSpreadElement.ts, 9, 40))
->c : Symbol(c, Decl(objectSpreadElement.ts, 9, 60))
+let override: { a: number, b: string } =
+>override : Symbol(override, Decl(objectSpreadElement.ts, 11, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 11, 15))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 11, 26))
 
-let combined = { ...o, ...o2 }
->combined : Symbol(combined, Decl(objectSpreadElement.ts, 10, 3))
+    { ...o, b: 'override' }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 12, 11))
 
-let combinedBefore = { b: 'ok', ...o, ...o2 }
->combinedBefore : Symbol(combinedBefore, Decl(objectSpreadElement.ts, 11, 3))
->b : Symbol(b, Decl(objectSpreadElement.ts, 11, 22))
+let nested: { a: number, b: boolean, c: string } =
+>nested : Symbol(nested, Decl(objectSpreadElement.ts, 13, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 13, 13))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 13, 24))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 13, 36))
 
-let combinedMid = { ...o, b: 'ok', ...o2 }
->combinedMid : Symbol(combinedMid, Decl(objectSpreadElement.ts, 12, 3))
->b : Symbol(b, Decl(objectSpreadElement.ts, 12, 25))
+    { ...{ a: 3, ...{ b: false, c: 'overriden' } }, c: 'whatever' }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 14, 10))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 14, 21))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 14, 31))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 14, 51))
 
-let combinedAfter = { ...o, ...o2, b: 'ok' }
->combinedAfter : Symbol(combinedAfter, Decl(objectSpreadElement.ts, 13, 3))
->b : Symbol(b, Decl(objectSpreadElement.ts, 13, 34))
+let combined: { a: number, b: string, c: boolean } =
+>combined : Symbol(combined, Decl(objectSpreadElement.ts, 15, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 15, 15))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 15, 26))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 15, 37))
 
-let combinedNested = {
->combinedNested : Symbol(combinedNested, Decl(objectSpreadElement.ts, 14, 3))
+    { ...o, ...o2 }
+let combinedBefore: { a: number, b: string, c: boolean } =
+>combinedBefore : Symbol(combinedBefore, Decl(objectSpreadElement.ts, 17, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 17, 21))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 17, 32))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 17, 43))
 
-    ...{ a: 4, ...{ b: false, c: 'overriden' } },
->a : Symbol(a, Decl(objectSpreadElement.ts, 15, 8))
->b : Symbol(b, Decl(objectSpreadElement.ts, 15, 19))
->c : Symbol(c, Decl(objectSpreadElement.ts, 15, 29))
+    { b: 'ok', ...o, ...o2 }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 18, 5))
 
-    d: 'actually new',
->d : Symbol(d, Decl(objectSpreadElement.ts, 15, 49))
+let combinedMid: { a: number, b: string, c: boolean } =
+>combinedMid : Symbol(combinedMid, Decl(objectSpreadElement.ts, 19, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 19, 18))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 19, 29))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 19, 40))
 
-    ...{ a: 5, d: 'maybe new' },
->a : Symbol(a, Decl(objectSpreadElement.ts, 17, 8))
->d : Symbol(d, Decl(objectSpreadElement.ts, 17, 14))
-}
-let combinedNestedChangeType = {
->combinedNestedChangeType : Symbol(combinedNestedChangeType, Decl(objectSpreadElement.ts, 19, 3))
+    { ...o, b: 'ok', ...o2 }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 20, 11))
 
-    ...{ a: 1, ...{ b: false, c: 'overriden' } },
->a : Symbol(a, Decl(objectSpreadElement.ts, 20, 8))
->b : Symbol(b, Decl(objectSpreadElement.ts, 20, 19))
->c : Symbol(c, Decl(objectSpreadElement.ts, 20, 29))
+let combinedAfter: { a: number, b: string, c: boolean } =
+>combinedAfter : Symbol(combinedAfter, Decl(objectSpreadElement.ts, 21, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 21, 20))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 21, 31))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 21, 42))
 
-    c: -1
->c : Symbol(c, Decl(objectSpreadElement.ts, 20, 49))
-}
-let propertyNested = { a: { ... o } }
->propertyNested : Symbol(propertyNested, Decl(objectSpreadElement.ts, 23, 3))
->a : Symbol(a, Decl(objectSpreadElement.ts, 23, 22))
+    { ...o, ...o2, b: 'ok' }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 22, 18))
+
+let combinedNested: { a: number, b: boolean, c: string, d: string } =
+>combinedNested : Symbol(combinedNested, Decl(objectSpreadElement.ts, 23, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 23, 21))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 23, 32))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 23, 44))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 23, 55))
+
+    { ...{ a: 4, ...{ b: false, c: 'overriden' } }, d: 'actually new', ...{ a: 5, d: 'maybe new' } }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 24, 10))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 24, 21))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 24, 31))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 24, 51))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 24, 75))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 24, 81))
+
+let combinedNestedChangeType: { a: number, b: boolean, c: number } =
+>combinedNestedChangeType : Symbol(combinedNestedChangeType, Decl(objectSpreadElement.ts, 25, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 25, 31))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 25, 42))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 25, 54))
+
+    { ...{ a: 1, ...{ b: false, c: 'overriden' } }, c: -1 }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 26, 10))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 26, 21))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 26, 31))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 26, 51))
+
+let propertyNested: { a: { a: number, b: string } } =
+>propertyNested : Symbol(propertyNested, Decl(objectSpreadElement.ts, 27, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 27, 21))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 27, 26))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 27, 37))
+
+    { a: { ... o } }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 28, 5))
 
 // accessors don't copy the descriptor
-// (which means that readonly getters become read/write)
+// (which means that readonly getters become read/write properties)
 let op = { get a () { return 6 } }
->op : Symbol(op, Decl(objectSpreadElement.ts, 26, 3))
->a : Symbol(a, Decl(objectSpreadElement.ts, 26, 10))
+>op : Symbol(op, Decl(objectSpreadElement.ts, 31, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 31, 10))
 
-let getter = { ...op, c: 7 }
->getter : Symbol(getter, Decl(objectSpreadElement.ts, 27, 3))
->c : Symbol(c, Decl(objectSpreadElement.ts, 27, 21))
+let getter: { a: number, c: number } =
+>getter : Symbol(getter, Decl(objectSpreadElement.ts, 32, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 32, 13))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 32, 24))
+
+    { ...op, c: 7 }
+>c : Symbol(c, Decl(objectSpreadElement.ts, 33, 12))
 
 // null and undefined are just skipped
-let spreadNull = { ...null }
->spreadNull : Symbol(spreadNull, Decl(objectSpreadElement.ts, 30, 3))
+let spreadNull: { a: number } =
+>spreadNull : Symbol(spreadNull, Decl(objectSpreadElement.ts, 36, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 36, 17))
 
-let spreadUndefined = { ...undefined }
->spreadUndefined : Symbol(spreadUndefined, Decl(objectSpreadElement.ts, 31, 3))
+    { a: 7, ...null }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 37, 5))
+
+let spreadUndefined: { a: number } =
+>spreadUndefined : Symbol(spreadUndefined, Decl(objectSpreadElement.ts, 38, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 38, 22))
+
+    { a: 7, ...undefined }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 39, 5))
 
 // methods are not enumerable
 class C { p = 1; m() { } }
->C : Symbol(C, Decl(objectSpreadElement.ts, 31, 38))
->p : Symbol(C.p, Decl(objectSpreadElement.ts, 34, 9))
->m : Symbol(C.m, Decl(objectSpreadElement.ts, 34, 16))
+>C : Symbol(C, Decl(objectSpreadElement.ts, 39, 26))
+>p : Symbol(C.p, Decl(objectSpreadElement.ts, 42, 9))
+>m : Symbol(C.m, Decl(objectSpreadElement.ts, 42, 16))
 
 let c: C = new C()
->c : Symbol(c, Decl(objectSpreadElement.ts, 35, 3))
->C : Symbol(C, Decl(objectSpreadElement.ts, 31, 38))
->C : Symbol(C, Decl(objectSpreadElement.ts, 31, 38))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 43, 3))
+>C : Symbol(C, Decl(objectSpreadElement.ts, 39, 26))
+>C : Symbol(C, Decl(objectSpreadElement.ts, 39, 26))
 
-let spreadC = {...c}
->spreadC : Symbol(spreadC, Decl(objectSpreadElement.ts, 36, 3))
+let spreadC: { p: number } = {...c}
+>spreadC : Symbol(spreadC, Decl(objectSpreadElement.ts, 44, 3))
+>p : Symbol(p, Decl(objectSpreadElement.ts, 44, 14))
 
-// new field's type conflicts with existing field
-let changeTypeAfter = { ...o, a: 'wrong type?' }
->changeTypeAfter : Symbol(changeTypeAfter, Decl(objectSpreadElement.ts, 39, 3))
->a : Symbol(a, Decl(objectSpreadElement.ts, 39, 29))
+// new field's type conflicting with existing field is OK
+let changeTypeAfter: { a: string, b: string } =
+>changeTypeAfter : Symbol(changeTypeAfter, Decl(objectSpreadElement.ts, 47, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 47, 22))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 47, 33))
 
-let changeTypeBefore = { a: 'wrong type?', ...o }
->changeTypeBefore : Symbol(changeTypeBefore, Decl(objectSpreadElement.ts, 40, 3))
->a : Symbol(a, Decl(objectSpreadElement.ts, 40, 24))
+    { ...o, a: 'wrong type?' }
+>a : Symbol(a, Decl(objectSpreadElement.ts, 48, 11))
 
-let changeTypeBoth = { ...o, ...swap };
->changeTypeBoth : Symbol(changeTypeBoth, Decl(objectSpreadElement.ts, 41, 3))
+let changeTypeBefore: { a: number, b: string } =
+>changeTypeBefore : Symbol(changeTypeBefore, Decl(objectSpreadElement.ts, 49, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 49, 23))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 49, 34))
+
+    { a: 'wrong type?', ...o };
+>a : Symbol(a, Decl(objectSpreadElement.ts, 50, 5))
+
+let changeTypeBoth: { a: string, b: number } =
+>changeTypeBoth : Symbol(changeTypeBoth, Decl(objectSpreadElement.ts, 51, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 51, 21))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 51, 32))
+
+    { ...o, ...swap };
 
 // computed property
-let computedFirst = {
->computedFirst : Symbol(computedFirst, Decl(objectSpreadElement.ts, 44, 3))
+let computedFirst: { a: number, b: string, "before everything": number } =
+>computedFirst : Symbol(computedFirst, Decl(objectSpreadElement.ts, 55, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 55, 20))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 55, 31))
 
-    ['before everything']: 12,
->'before everything' : Symbol(['before everything'], Decl(objectSpreadElement.ts, 44, 21))
+    { ['before everything']: 12, ...o, b: 'yes' }
+>'before everything' : Symbol(['before everything'], Decl(objectSpreadElement.ts, 56, 5))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 56, 38))
 
-    ...o,
-    b: 'yes'
->b : Symbol(b, Decl(objectSpreadElement.ts, 46, 9))
-}
-let computedMiddle = {
->computedMiddle : Symbol(computedMiddle, Decl(objectSpreadElement.ts, 49, 3))
+let computedMiddle: { a: number, b: string, c: boolean, "in the middle": number } =
+>computedMiddle : Symbol(computedMiddle, Decl(objectSpreadElement.ts, 57, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 57, 21))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 57, 32))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 57, 43))
 
-    ...o,
-    ['in the middle']: 13,
->'in the middle' : Symbol(['in the middle'], Decl(objectSpreadElement.ts, 50, 9))
+    { ...o, ['in the middle']: 13, b: 'maybe?', ...o2 }
+>'in the middle' : Symbol(['in the middle'], Decl(objectSpreadElement.ts, 58, 11))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 58, 34))
 
-    b: 'maybe?',
->b : Symbol(b, Decl(objectSpreadElement.ts, 51, 26))
+let computedAfter: { a: number, b: string, "at the end": number } =
+>computedAfter : Symbol(computedAfter, Decl(objectSpreadElement.ts, 59, 3))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 59, 20))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 59, 31))
 
-    ...o2
-}
-let computedAfter = {
->computedAfter : Symbol(computedAfter, Decl(objectSpreadElement.ts, 55, 3))
-
-    ...o,
-    b: 'yeah',
->b : Symbol(b, Decl(objectSpreadElement.ts, 56, 9))
-
-    ['at the end']: 14
->'at the end' : Symbol(['at the end'], Decl(objectSpreadElement.ts, 57, 14))
-}
+    { ...o, b: 'yeah', ['at the end']: 14 }
+>b : Symbol(b, Decl(objectSpreadElement.ts, 60, 11))
+>'at the end' : Symbol(['at the end'], Decl(objectSpreadElement.ts, 60, 22))
 
 // generics
 function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->T : Symbol(T, Decl(objectSpreadElement.ts, 62, 11))
->U : Symbol(U, Decl(objectSpreadElement.ts, 62, 13))
->t : Symbol(t, Decl(objectSpreadElement.ts, 62, 17))
->T : Symbol(T, Decl(objectSpreadElement.ts, 62, 11))
->u : Symbol(u, Decl(objectSpreadElement.ts, 62, 22))
->U : Symbol(U, Decl(objectSpreadElement.ts, 62, 13))
->id : Symbol(id, Decl(objectSpreadElement.ts, 62, 31))
->T : Symbol(T, Decl(objectSpreadElement.ts, 62, 11))
->U : Symbol(U, Decl(objectSpreadElement.ts, 62, 13))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>T : Symbol(T, Decl(objectSpreadElement.ts, 63, 11))
+>U : Symbol(U, Decl(objectSpreadElement.ts, 63, 13))
+>t : Symbol(t, Decl(objectSpreadElement.ts, 63, 17))
+>T : Symbol(T, Decl(objectSpreadElement.ts, 63, 11))
+>u : Symbol(u, Decl(objectSpreadElement.ts, 63, 22))
+>U : Symbol(U, Decl(objectSpreadElement.ts, 63, 13))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 63, 31))
+>T : Symbol(T, Decl(objectSpreadElement.ts, 63, 11))
+>U : Symbol(U, Decl(objectSpreadElement.ts, 63, 13))
 
     return { id: 'id', ...t, ...u };
->id : Symbol(id, Decl(objectSpreadElement.ts, 63, 12))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 64, 12))
 }
 let exclusive: { id: string, a: number, b: string, c: string, d: boolean } =
->exclusive : Symbol(exclusive, Decl(objectSpreadElement.ts, 65, 3))
->id : Symbol(id, Decl(objectSpreadElement.ts, 65, 16))
->a : Symbol(a, Decl(objectSpreadElement.ts, 65, 28))
->b : Symbol(b, Decl(objectSpreadElement.ts, 65, 39))
->c : Symbol(c, Decl(objectSpreadElement.ts, 65, 50))
->d : Symbol(d, Decl(objectSpreadElement.ts, 65, 61))
+>exclusive : Symbol(exclusive, Decl(objectSpreadElement.ts, 66, 3))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 66, 16))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 66, 28))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 66, 39))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 66, 50))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 66, 61))
 
     f({ a: 1, b: 'yes' }, { c: 'no', d: false })
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->a : Symbol(a, Decl(objectSpreadElement.ts, 66, 7))
->b : Symbol(b, Decl(objectSpreadElement.ts, 66, 13))
->c : Symbol(c, Decl(objectSpreadElement.ts, 66, 27))
->d : Symbol(d, Decl(objectSpreadElement.ts, 66, 36))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 67, 7))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 67, 13))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 67, 27))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 67, 36))
 
 let overlap: { id: string, a: number, b: string } =
->overlap : Symbol(overlap, Decl(objectSpreadElement.ts, 67, 3))
->id : Symbol(id, Decl(objectSpreadElement.ts, 67, 14))
->a : Symbol(a, Decl(objectSpreadElement.ts, 67, 26))
->b : Symbol(b, Decl(objectSpreadElement.ts, 67, 37))
+>overlap : Symbol(overlap, Decl(objectSpreadElement.ts, 68, 3))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 68, 14))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 68, 26))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 68, 37))
 
     f({ a: 1 }, { a: 2, b: 'extra' })
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->a : Symbol(a, Decl(objectSpreadElement.ts, 68, 7))
->a : Symbol(a, Decl(objectSpreadElement.ts, 68, 17))
->b : Symbol(b, Decl(objectSpreadElement.ts, 68, 23))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 69, 7))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 69, 17))
+>b : Symbol(b, Decl(objectSpreadElement.ts, 69, 23))
 
 let overlapConflict: { id:string, a: string } =
->overlapConflict : Symbol(overlapConflict, Decl(objectSpreadElement.ts, 69, 3))
->id : Symbol(id, Decl(objectSpreadElement.ts, 69, 22))
->a : Symbol(a, Decl(objectSpreadElement.ts, 69, 33))
+>overlapConflict : Symbol(overlapConflict, Decl(objectSpreadElement.ts, 70, 3))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 70, 22))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 70, 33))
 
     f({ a: 1 }, { a: 'mismatch' })
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->a : Symbol(a, Decl(objectSpreadElement.ts, 70, 7))
->a : Symbol(a, Decl(objectSpreadElement.ts, 70, 17))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 71, 7))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 71, 17))
 
 let overwriteId: { id: boolean, a: number, c: number, d: string } =
->overwriteId : Symbol(overwriteId, Decl(objectSpreadElement.ts, 71, 3))
->id : Symbol(id, Decl(objectSpreadElement.ts, 71, 18))
->a : Symbol(a, Decl(objectSpreadElement.ts, 71, 31))
->c : Symbol(c, Decl(objectSpreadElement.ts, 71, 42))
->d : Symbol(d, Decl(objectSpreadElement.ts, 71, 53))
+>overwriteId : Symbol(overwriteId, Decl(objectSpreadElement.ts, 72, 3))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 72, 18))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 72, 31))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 72, 42))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 72, 53))
 
     f({ a: 1, id: true }, { c: 1, d: 'no' })
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->a : Symbol(a, Decl(objectSpreadElement.ts, 72, 7))
->id : Symbol(id, Decl(objectSpreadElement.ts, 72, 13))
->c : Symbol(c, Decl(objectSpreadElement.ts, 72, 27))
->d : Symbol(d, Decl(objectSpreadElement.ts, 72, 33))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>a : Symbol(a, Decl(objectSpreadElement.ts, 73, 7))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 73, 13))
+>c : Symbol(c, Decl(objectSpreadElement.ts, 73, 27))
+>d : Symbol(d, Decl(objectSpreadElement.ts, 73, 33))
 
 class D { m() { }; q = 2; }
->D : Symbol(D, Decl(objectSpreadElement.ts, 72, 44))
->m : Symbol(D.m, Decl(objectSpreadElement.ts, 74, 9))
->q : Symbol(D.q, Decl(objectSpreadElement.ts, 74, 18))
+>D : Symbol(D, Decl(objectSpreadElement.ts, 73, 44))
+>m : Symbol(D.m, Decl(objectSpreadElement.ts, 75, 9))
+>q : Symbol(D.q, Decl(objectSpreadElement.ts, 75, 18))
 
 let classesAreWrong: { id: string, ...C, ...D } =
->classesAreWrong : Symbol(classesAreWrong, Decl(objectSpreadElement.ts, 75, 3))
->id : Symbol(id, Decl(objectSpreadElement.ts, 75, 22))
->C : Symbol(C, Decl(objectSpreadElement.ts, 31, 38))
->D : Symbol(D, Decl(objectSpreadElement.ts, 72, 44))
+>classesAreWrong : Symbol(classesAreWrong, Decl(objectSpreadElement.ts, 76, 3))
+>id : Symbol(id, Decl(objectSpreadElement.ts, 76, 22))
+>C : Symbol(C, Decl(objectSpreadElement.ts, 39, 26))
+>D : Symbol(D, Decl(objectSpreadElement.ts, 73, 44))
 
     f(new C(), new D())
->f : Symbol(f, Decl(objectSpreadElement.ts, 59, 1))
->C : Symbol(C, Decl(objectSpreadElement.ts, 31, 38))
->D : Symbol(D, Decl(objectSpreadElement.ts, 72, 44))
+>f : Symbol(f, Decl(objectSpreadElement.ts, 60, 43))
+>C : Symbol(C, Decl(objectSpreadElement.ts, 39, 26))
+>D : Symbol(D, Decl(objectSpreadElement.ts, 73, 44))
 
