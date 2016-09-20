@@ -5728,7 +5728,7 @@ namespace ts {
                 return spreadTypes[id];
             }
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
-            spread.types = types;
+            spread.types = filter(types, t => !(t.flags & (TypeFlags.Null | TypeFlags.Undefined)));
             spread.aliasSymbol = aliasSymbol;
             spread.aliasTypeArguments = aliasTypeArguments;
             return spread;
