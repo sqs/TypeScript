@@ -1,6 +1,8 @@
 //// [objectSpreadElement.ts]
 let o = { a: 1, b: 'no' }
 let o2 = { b: 'yes', c: true }
+let swap = { a: 'yes', b: -1 };
+
 let addAfter = { ...o, c: false }
 let addBefore = { c: false, ...o }
 // Note: ignore still changes the order that properties are printed
@@ -16,6 +18,10 @@ let combinedNested = {
     d: 'actually new',
     ...{ a: 5, d: 'maybe new' },
 }
+let combinedNestedChangeType = {
+    ...{ a: 1, ...{ b: false, c: 'overriden' } },
+    c: -1
+}
 let propertyNested = { a: { ... o } }
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
@@ -30,6 +36,11 @@ let spreadUndefined = { ...undefined }
 class C { p = 1; m() { } }
 let c: C = new C()
 let spreadC = {...c}
+
+// new field's type conflicts with existing field
+let changeTypeAfter = { ...o, a: 'wrong type?' }
+let changeTypeBefore = { a: 'wrong type?', ...o }
+let changeTypeBoth = { ...o, ...swap };
 
 // computed property
 let computedFirst = {
@@ -57,13 +68,13 @@ let exclusive: { id: string, a: number, b: string, c: string, d: boolean } =
     f({ a: 1, b: 'yes' }, { c: 'no', d: false })
 let overlap: { id: string, a: number, b: string } =
     f({ a: 1 }, { a: 2, b: 'extra' })
-let overlapConflict: { id:string, a: number & string } =
+let overlapConflict: { id:string, a: string } =
     f({ a: 1 }, { a: 'mismatch' })
-let overwriteId: { id: string, a: number, d: string } =
-    f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' })
+let overwriteId: { id: boolean, a: number, c: number, d: string } =
+    f({ a: 1, id: true }, { c: 1, d: 'no' })
 
 class D { m() { }; q = 2; }
-let classesAreWrong: /*{ id: string, ...C., ...D }*/ =
+let classesAreWrong: { id: string, ...C, ...D } =
     f(new C(), new D())
 
 
@@ -78,6 +89,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 };
 var o = { a: 1, b: 'no' };
 var o2 = { b: 'yes', c: true };
+var swap = { a: 'yes', b: -1 };
 var addAfter = __assign({}, o, { c: false });
 var addBefore = __assign({ c: false }, o);
 // Note: ignore still changes the order that properties are printed
@@ -89,6 +101,7 @@ var combinedBefore = __assign({ b: 'ok' }, o, o2);
 var combinedMid = __assign({}, o, { b: 'ok' }, o2);
 var combinedAfter = __assign({}, o, o2, { b: 'ok' });
 var combinedNested = __assign({}, __assign({ a: 4 }, { b: false, c: 'overriden' }), { d: 'actually new' }, { a: 5, d: 'maybe new' });
+var combinedNestedChangeType = __assign({}, __assign({ a: 1 }, { b: false, c: 'overriden' }), { c: -1 });
 var propertyNested = __assign({ a: __assign({}, o) });
 // accessors don't copy the descriptor
 // (which means that readonly getters become read/write)
@@ -107,6 +120,10 @@ var C = (function () {
 }());
 var c = new C();
 var spreadC = __assign({}, c);
+// new field's type conflicts with existing field
+var changeTypeAfter = __assign({}, o, { a: 'wrong type?' });
+var changeTypeBefore = __assign({ a: 'wrong type?' }, o);
+var changeTypeBoth = __assign({}, o, swap);
 // computed property
 var computedFirst = __assign((_a = {}, _a['before everything'] = 12, _a), o, { b: 'yes' });
 var computedMiddle = __assign({}, o, (_b = {}, _b['in the middle'] = 13, _b.b = 'maybe?', _b), o2);
@@ -118,7 +135,7 @@ function f(t, u) {
 var exclusive = f({ a: 1, b: 'yes' }, { c: 'no', d: false });
 var overlap = f({ a: 1 }, { a: 2, b: 'extra' });
 var overlapConflict = f({ a: 1 }, { a: 'mismatch' });
-var overwriteId = f({ a: 1, id: 'overwritten' }, { c: 1, d: 'no' });
+var overwriteId = f({ a: 1, id: true }, { c: 1, d: 'no' });
 var D = (function () {
     function D() {
         this.q = 2;
