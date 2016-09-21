@@ -12,6 +12,10 @@ let privateOptionalx: PrivateOptionalX;
 let publicx: PublicX;
 let o3 = { ...publicx, ...privateOptionalx };
 let sn: string | number = o3.x; // error, x is private
+let optionalString: { sn?: string };
+let optionalNumber: { sn?: number };
+let allOptional: { sn: string | number } = { ...optionalString, ...optionalNumber };
+// error 'sn' is optional in source, required in target
 
 // expressions are not allowed
 let o1 = { ...1 + 1 };

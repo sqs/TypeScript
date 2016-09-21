@@ -1,13 +1,15 @@
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(13,30): error TS2339: Property 'x' does not exist on type '{ ...PublicX, ...PrivateOptionalX }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(16,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(17,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,36): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,53): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(25,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(16,5): error TS2322: Type '{ ...{ sn?: string; }, ...{ sn?: number; } }' is not assignable to type '{ sn: string | number; }'.
+  Property 'sn' is optional in type '{ ...{ sn?: string; }, ...{ sn?: number; } }' but required in type '{ sn: string | number; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(21,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,36): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,53): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(29,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(35,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
 
 
-==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (7 errors) ====
+==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (8 errors) ====
     let o = { a: 1, b: 'no' }
     
     /// private propagates
@@ -23,6 +25,13 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,9): 
     let sn: string | number = o3.x; // error, x is private
                                  ~
 !!! error TS2339: Property 'x' does not exist on type '{ ...PublicX, ...PrivateOptionalX }'.
+    let optionalString: { sn?: string };
+    let optionalNumber: { sn?: number };
+    let allOptional: { sn: string | number } = { ...optionalString, ...optionalNumber };
+        ~~~~~~~~~~~
+!!! error TS2322: Type '{ ...{ sn?: string; }, ...{ sn?: number; } }' is not assignable to type '{ sn: string | number; }'.
+!!! error TS2322:   Property 'sn' is optional in type '{ ...{ sn?: string; }, ...{ sn?: number; } }' but required in type '{ sn: string | number; }'.
+    // error 'sn' is optional in source, required in target
     
     // expressions are not allowed
     let o1 = { ...1 + 1 };

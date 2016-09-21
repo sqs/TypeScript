@@ -54,6 +54,16 @@ let changeTypeBefore: { a: number, b: string } =
 let changeTypeBoth: { a: string, b: number } =
     { ...o, ...swap };
 
+// optional
+let definiteBoolean: { sn: boolean };
+let definiteString: { sn: string };
+let optionalString: { sn?: string };
+let optionalNumber: { sn?: number };
+let optionalUnionStops: { sn: string | number | boolean } = { ...definiteBoolean, ...definiteString, ...optionalNumber };
+let optionalUnionDuplicates: { sn: string | number } = { ...definiteBoolean, ...definiteString, ...optionalString, ...optionalNumber };
+let allOptional: { sn?: string | number } = { ...optionalString, ...optionalNumber };
+
+
 // computed property
 let computedFirst: { a: number, b: string, "before everything": number } =
     { ['before everything']: 12, ...o, b: 'yes' }
@@ -127,6 +137,14 @@ var spreadC = __assign({}, c);
 var changeTypeAfter = __assign({}, o, { a: 'wrong type?' });
 var changeTypeBefore = __assign({ a: 'wrong type?' }, o);
 var changeTypeBoth = __assign({}, o, swap);
+// optional
+var definiteBoolean;
+var definiteString;
+var optionalString;
+var optionalNumber;
+var optionalUnionStops = __assign({}, definiteBoolean, definiteString, optionalNumber);
+var optionalUnionDuplicates = __assign({}, definiteBoolean, definiteString, optionalString, optionalNumber);
+var allOptional = __assign({}, optionalString, optionalNumber);
 // computed property
 var computedFirst = __assign((_a = {}, _a['before everything'] = 12, _a), o, { b: 'yes' });
 var computedMiddle = __assign({}, o, (_b = {}, _b['in the middle'] = 13, _b.b = 'maybe?', _b), o2);

@@ -12,6 +12,10 @@ let privateOptionalx: PrivateOptionalX;
 let publicx: PublicX;
 let o3 = { ...publicx, ...privateOptionalx };
 let sn: string | number = o3.x; // error, x is private
+let optionalString: { sn?: string };
+let optionalNumber: { sn?: number };
+let allOptional: { sn: string | number } = { ...optionalString, ...optionalNumber };
+// error 'sn' is optional in source, required in target
 
 // expressions are not allowed
 let o1 = { ...1 + 1 };
@@ -57,6 +61,10 @@ var privateOptionalx;
 var publicx;
 var o3 = __assign({}, publicx, privateOptionalx);
 var sn = o3.x; // error, x is private
+var optionalString;
+var optionalNumber;
+var allOptional = __assign({}, optionalString, optionalNumber);
+// error 'sn' is optional in source, required in target
 // expressions are not allowed
 var o1 = __assign({}, 1 + 1);
 var o2 = __assign({}, (1 + 1));

@@ -296,6 +296,48 @@ let changeTypeBoth: { a: string, b: number } =
 >o : any
 >swap : any
 
+// optional
+let definiteBoolean: { sn: boolean };
+>definiteBoolean : { sn: boolean; }
+>sn : boolean
+
+let definiteString: { sn: string };
+>definiteString : { sn: string; }
+>sn : string
+
+let optionalString: { sn?: string };
+>optionalString : { sn?: string; }
+>sn : string
+
+let optionalNumber: { sn?: number };
+>optionalNumber : { sn?: number; }
+>sn : number
+
+let optionalUnionStops: { sn: string | number | boolean } = { ...definiteBoolean, ...definiteString, ...optionalNumber };
+>optionalUnionStops : { sn: string | number | boolean; }
+>sn : string | number | boolean
+>{ ...definiteBoolean, ...definiteString, ...optionalNumber } : { ...{ sn: boolean; }, ...{ sn: string; }, ...{ sn?: number; } }
+>definiteBoolean : any
+>definiteString : any
+>optionalNumber : any
+
+let optionalUnionDuplicates: { sn: string | number } = { ...definiteBoolean, ...definiteString, ...optionalString, ...optionalNumber };
+>optionalUnionDuplicates : { sn: string | number; }
+>sn : string | number
+>{ ...definiteBoolean, ...definiteString, ...optionalString, ...optionalNumber } : { ...{ sn: boolean; }, ...{ sn: string; }, ...{ sn?: string; }, ...{ sn?: number; } }
+>definiteBoolean : any
+>definiteString : any
+>optionalString : any
+>optionalNumber : any
+
+let allOptional: { sn?: string | number } = { ...optionalString, ...optionalNumber };
+>allOptional : { sn?: string | number; }
+>sn : string | number
+>{ ...optionalString, ...optionalNumber } : { ...{ sn?: string; }, ...{ sn?: number; } }
+>optionalString : any
+>optionalNumber : any
+
+
 // computed property
 let computedFirst: { a: number, b: string, "before everything": number } =
 >computedFirst : { a: number; b: string; "before everything": number; }

@@ -54,6 +54,16 @@ let changeTypeBefore: { a: number, b: string } =
 let changeTypeBoth: { a: string, b: number } =
     { ...o, ...swap };
 
+// optional
+let definiteBoolean: { sn: boolean };
+let definiteString: { sn: string };
+let optionalString: { sn?: string };
+let optionalNumber: { sn?: number };
+let optionalUnionStops: { sn: string | number | boolean } = { ...definiteBoolean, ...definiteString, ...optionalNumber };
+let optionalUnionDuplicates: { sn: string | number } = { ...definiteBoolean, ...definiteString, ...optionalString, ...optionalNumber };
+let allOptional: { sn?: string | number } = { ...optionalString, ...optionalNumber };
+
+
 // computed property
 let computedFirst: { a: number, b: string, "before everything": number } =
     { ['before everything']: 12, ...o, b: 'yes' }
