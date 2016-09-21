@@ -4325,7 +4325,7 @@ namespace ts {
                 const t = type.types[i];
                 stringIndexInfo = intersectIndexInfos(stringIndexInfo, getIndexInfoOfType(t, IndexKind.String));
                 numberIndexInfo = intersectIndexInfos(numberIndexInfo, getIndexInfoOfType(t, IndexKind.Number));
-                if (!(t.symbol.flags & SymbolFlags.Optional)) {
+                if (!t.symbol || !(t.symbol.flags & SymbolFlags.Optional)) {
                     break;
                 }
             }
@@ -5709,7 +5709,7 @@ namespace ts {
                             const name = <Identifier>e.name;
                             const text = getTextOfPropertyName(name);
                             // TODO: Creating a symbol should already have a function that I can just call
-                            const flags = SymbolFlags.Property | SymbolFlags.Transient;
+                            const flags = SymbolFlags.Property | SymbolFlags.Transient | (e.questionToken ? SymbolFlags.Optional : 0);
                             const symbol = <TransientSymbol>createSymbol(flags, text);
                             if (e.kind === SyntaxKind.PropertySignature) {
                                 // TODO:e could be a bunch of things, but ignore things like computed properties for now ...
@@ -5720,6 +5720,9 @@ namespace ts {
                             }
                             members[symbol.name] = symbol;
                         }
+                    }
+                    if (members) {
+                        types.push(createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined));
                     }
                     return getSpreadType(types, node.symbol);
                 }
@@ -6661,6 +6664,31 @@ namespace ts {
                     }
                 }
 
+                if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
+                    const sourceParameters = filter((source as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter));
+                    const targetParameters = filter((target as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter));
+                    // TODO: Error elaboration is broken (seems to work when the target is a Spread though)
+                    if (sourceParameters.length !== targetParameters.length) {
+                        reportRelationError(headMessage, source, target);
+                        return Ternary.False;
+                    }
+                    for (let i = 0; i < sourceParameters.length; i++) {
+                        if (sourceParameters[i].symbol !== targetParameters[i].symbol) {
+                            reportRelationError(headMessage, source, target);
+                            return Ternary.False
+                        }
+                    }
+                    const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
+                    if (result = objectTypeRelatedTo(source, source, target, reportStructuralErrors)) {
+                        errorInfo = saveErrorInfo;
+                        return result;
+                    }
+
+                    // also: If source is a spread type, then we still want to early-return a decision here IF it has type variables
+                    // that's because the normal structural comparison below doesn't work in the presence of type variables
+                    // (the above algorithm might work for this caveat. Hopefully.)
+                }
+
                 if (source.flags & TypeFlags.TypeParameter) {
                     let constraint = getConstraintOfTypeParameter(<TypeParameter>source);
 
@@ -6678,26 +6706,6 @@ namespace ts {
                         return result;
                     }
                 }
-                //else if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
-                    // OK, I have to do most of this myself since, I don't know, we don't actually resolve to any properties.
-                    // and we need to know which properties are on the target
-                    // well, it actually MUST do something!
-                    // no, objectTypeRelatedTo only calls getPropertiesOfObjectType on the *target*, then calls getPropertyOfType on the source individually.
-                    // so it's OK if the *source* is Spread. Just not the target. Like Unions and Intersections above, we have to handle that case here.
-
-
-                    // Ourselves:
-                    // 1. iterate over the types
-                    // 2. aggregate everything that's not a type variable (getPropertiesOfType)
-                    // 3. create a new spread type then somehow turn it into an object type.
-                    // 4. put the type variables in a list
-                    // 5. make sure they are the same as type variables in the source.
-                    // 6. for everything else, just use normal structural assignabiilty. Or write a specific, more efficient one here.
-
-                    // also: If source is a spread type, then we still want to early-return a decision here IF it has type variables
-                    // that's because the normal structural comparison below doesn't work in the presence of type variables
-                    // (the above algorithm might work for this caveat. Hopefully.)
-                //}
                 else {
                     if (source.flags & TypeFlags.Reference && target.flags & TypeFlags.Reference && (<TypeReference>source).target === (<TypeReference>target).target) {
                         // We have type references to same target type, see if relationship holds for all type arguments
@@ -6715,16 +6723,6 @@ namespace ts {
                         // Report structural errors only if we haven't reported any errors yet
                         const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo && !(source.flags & TypeFlags.Primitive);
                         if (result = objectTypeRelatedTo(apparentSource, source, target, reportStructuralErrors)) {
-                            errorInfo = saveErrorInfo;
-                            return result;
-                        }
-                    }
-                    else if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection | TypeFlags.Spread) && target.flags & TypeFlags.Spread) {
-                        const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo && !(source.flags & TypeFlags.Primitive);
-                        if (find((target as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter))) {
-                            return Ternary.False; // should have already been checked in spread-to-spread check
-                        }
-                        else if (result = objectTypeRelatedTo(apparentSource, source, target, reportStructuralErrors)) {
                             errorInfo = saveErrorInfo;
                             return result;
                         }
