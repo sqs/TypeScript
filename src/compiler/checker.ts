@@ -4329,7 +4329,7 @@ namespace ts {
                     break;
                 }
             }
-            setObjectTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+            setObjectTypeMembers(type, emptySymbols, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
         }
 
         function resolveAnonymousTypeMembers(type: AnonymousType) {
@@ -4409,6 +4409,10 @@ namespace ts {
         function getPropertiesOfObjectType(type: Type): Symbol[] {
             if (type.flags & TypeFlags.ObjectType) {
                 return resolveStructuredTypeMembers(<ObjectType>type).properties;
+            }
+            if (type.flags & TypeFlags.Spread) {
+                // probably a bad idea!
+                return getPropertiesOfType(type);
             }
             return emptyArray;
         }
@@ -5689,7 +5693,7 @@ namespace ts {
                                   find((node as TypeLiteralNode).members, elt => elt.kind === SyntaxKind.SpreadTypeElement));
                 let type: ObjectType;
                 if (isSpread) {
-                    let members = createMap<Symbol>();
+                    let members: Map<Symbol>;
                     const types: Type[] = [];
                     for (const e of (node as TypeLiteralNode).members) {
                         if (e.kind === SyntaxKind.SpreadTypeElement) {
@@ -6674,6 +6678,26 @@ namespace ts {
                         return result;
                     }
                 }
+                //else if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
+                    // OK, I have to do most of this myself since, I don't know, we don't actually resolve to any properties.
+                    // and we need to know which properties are on the target
+                    // well, it actually MUST do something!
+                    // no, objectTypeRelatedTo only calls getPropertiesOfObjectType on the *target*, then calls getPropertyOfType on the source individually.
+                    // so it's OK if the *source* is Spread. Just not the target. Like Unions and Intersections above, we have to handle that case here.
+
+
+                    // Ourselves:
+                    // 1. iterate over the types
+                    // 2. aggregate everything that's not a type variable (getPropertiesOfType)
+                    // 3. create a new spread type then somehow turn it into an object type.
+                    // 4. put the type variables in a list
+                    // 5. make sure they are the same as type variables in the source.
+                    // 6. for everything else, just use normal structural assignabiilty. Or write a specific, more efficient one here.
+
+                    // also: If source is a spread type, then we still want to early-return a decision here IF it has type variables
+                    // that's because the normal structural comparison below doesn't work in the presence of type variables
+                    // (the above algorithm might work for this caveat. Hopefully.)
+                //}
                 else {
                     if (source.flags & TypeFlags.Reference && target.flags & TypeFlags.Reference && (<TypeReference>source).target === (<TypeReference>target).target) {
                         // We have type references to same target type, see if relationship holds for all type arguments
@@ -6687,10 +6711,20 @@ namespace ts {
                     // In a check of the form X = A & B, we will have previously checked if A relates to X or B relates
                     // to X. Failing both of those we want to check if the aggregation of A and B's members structurally
                     // relates to X. Thus, we include intersection types on the source side here.
-                    if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection | TypeFlags.Spread) && target.flags & (TypeFlags.ObjectType | TypeFlags.Spread)) {
+                    if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection | TypeFlags.Spread) && target.flags & TypeFlags.ObjectType) {
                         // Report structural errors only if we haven't reported any errors yet
                         const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo && !(source.flags & TypeFlags.Primitive);
                         if (result = objectTypeRelatedTo(apparentSource, source, target, reportStructuralErrors)) {
+                            errorInfo = saveErrorInfo;
+                            return result;
+                        }
+                    }
+                    else if (apparentSource.flags & (TypeFlags.ObjectType | TypeFlags.Intersection | TypeFlags.Spread) && target.flags & TypeFlags.Spread) {
+                        const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo && !(source.flags & TypeFlags.Primitive);
+                        if (find((target as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter))) {
+                            return Ternary.False; // should have already been checked in spread-to-spread check
+                        }
+                        else if (result = objectTypeRelatedTo(apparentSource, source, target, reportStructuralErrors)) {
                             errorInfo = saveErrorInfo;
                             return result;
                         }

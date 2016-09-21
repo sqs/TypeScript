@@ -75,9 +75,7 @@ namespace ts {
                     visitNode(cbNode, (<ShorthandPropertyAssignment>node).equalsToken) ||
                     visitNode(cbNode, (<ShorthandPropertyAssignment>node).objectAssignmentInitializer);
             case SyntaxKind.SpreadElement:
-                return visitNodes(cbNodes, node.decorators) ||
-                    visitNodes(cbNodes, node.modifiers) ||
-                    visitNode(cbNode, (<SpreadElement>node).dotDotDotToken) ||
+                return visitNode(cbNode, (<SpreadElement>node).dotDotDotToken) ||
                     visitNode(cbNode, (<SpreadElement>node).target);
             case SyntaxKind.SpreadTypeElement:
                 return visitNode(cbNode, (node as SpreadTypeElement).type);
