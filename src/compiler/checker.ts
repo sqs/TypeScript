@@ -4584,8 +4584,10 @@ namespace ts {
             const types = containingType.types;
             return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
                 let props: Symbol[];
-                let isPrivate = false;
+                // Result is readonly if any source is readonly
                 let isReadonly = false;
+                // Result is optional if all sources are optional
+                let commonFlags = SymbolFlags.Optional;
                 for (let i = types.length - 1; i > -1; i--) {
                     const type = getApparentType(types[i]);
                     if (type !== unknownType) {
@@ -4610,12 +4612,14 @@ namespace ts {
                                 return [undefined, false, 0];
                             }
                             if (!(prop.flags & SymbolFlags.Optional)) {
+                                // Reset extraFlags to None since we found a non-optional property
+                                commonFlags = SymbolFlags.None;
                                 break;
                             }
                         }
                     }
                 }
-                return [props, isReadonly, SymbolFlags.None];
+                return [props, isReadonly, commonFlags];
             });
         }
 
