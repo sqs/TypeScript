@@ -63,7 +63,6 @@ let optionalUnionStops: { sn: string | number | boolean } = { ...definiteBoolean
 let optionalUnionDuplicates: { sn: string | number } = { ...definiteBoolean, ...definiteString, ...optionalString, ...optionalNumber };
 let allOptional: { sn?: string | number } = { ...optionalString, ...optionalNumber };
 
-
 // computed property
 let computedFirst: { a: number, b: string, "before everything": number } =
     { ['before everything']: 12, ...o, b: 'yes' }

@@ -15,7 +15,14 @@ let sn: string | number = o3.x; // error, x is private
 let optionalString: { sn?: string };
 let optionalNumber: { sn?: number };
 let allOptional: { sn: string | number } = { ...optionalString, ...optionalNumber };
-// error 'sn' is optional in source, required in target
+// error, 'sn' is optional in source, required in target
+
+// assignability as target
+interface Bool { b: boolean };
+interface Str { s: string };
+let spread: { ...Bool, ...Str } = { s: 'foo' }; // error, missing 'b'
+let b: Bool;
+spread = b; // error, missing 's'
 
 // expressions are not allowed
 let o1 = { ...1 + 1 };

@@ -1,15 +1,19 @@
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(13,30): error TS2339: Property 'x' does not exist on type '{ ...PublicX, ...PrivateOptionalX }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(16,5): error TS2322: Type '{ ...{ sn?: string; }, ...{ sn?: number; } }' is not assignable to type '{ sn: string | number; }'.
   Property 'sn' is optional in type '{ ...{ sn?: string; }, ...{ sn?: number; } }' but required in type '{ sn: string | number; }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(20,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(21,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,36): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,53): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(29,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(35,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(22,5): error TS2322: Type '{ s: string; }' is not assignable to type '{ ...Bool, ...Str }'.
+  Property 'b' is missing in type '{ s: string; }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,1): error TS2322: Type 'Bool' is not assignable to type '{ ...Bool, ...Str }'.
+  Property 's' is missing in type 'Bool'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(27,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(28,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,36): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,53): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(36,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(42,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
 
 
-==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (8 errors) ====
+==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (10 errors) ====
     let o = { a: 1, b: 'no' }
     
     /// private propagates
@@ -31,7 +35,20 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(35,9): 
         ~~~~~~~~~~~
 !!! error TS2322: Type '{ ...{ sn?: string; }, ...{ sn?: number; } }' is not assignable to type '{ sn: string | number; }'.
 !!! error TS2322:   Property 'sn' is optional in type '{ ...{ sn?: string; }, ...{ sn?: number; } }' but required in type '{ sn: string | number; }'.
-    // error 'sn' is optional in source, required in target
+    // error, 'sn' is optional in source, required in target
+    
+    // assignability as target
+    interface Bool { b: boolean };
+    interface Str { s: string };
+    let spread: { ...Bool, ...Str } = { s: 'foo' }; // error, missing 'b'
+        ~~~~~~
+!!! error TS2322: Type '{ s: string; }' is not assignable to type '{ ...Bool, ...Str }'.
+!!! error TS2322:   Property 'b' is missing in type '{ s: string; }'.
+    let b: Bool;
+    spread = b; // error, missing 's'
+    ~~~~~~
+!!! error TS2322: Type 'Bool' is not assignable to type '{ ...Bool, ...Str }'.
+!!! error TS2322:   Property 's' is missing in type 'Bool'.
     
     // expressions are not allowed
     let o1 = { ...1 + 1 };

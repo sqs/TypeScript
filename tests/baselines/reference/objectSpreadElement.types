@@ -337,7 +337,6 @@ let allOptional: { sn?: string | number } = { ...optionalString, ...optionalNumb
 >optionalString : any
 >optionalNumber : any
 
-
 // computed property
 let computedFirst: { a: number, b: string, "before everything": number } =
 >computedFirst : { a: number; b: string; "before everything": number; }
