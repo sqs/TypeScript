@@ -46,6 +46,10 @@ class C { p = 1; m() { } }
 let c: C = new C()
 let spreadC: { p: number } = { ...c }
 
+// own methods are enumerable
+let cplus: { p: number, plus(): void } = { ...c, plus() { return this.p + 1; } };
+cplus.plus();
+
 // new field's type conflicting with existing field is OK
 let changeTypeAfter: { a: string, b: string } =
     { ...o, a: 'wrong type?' }
