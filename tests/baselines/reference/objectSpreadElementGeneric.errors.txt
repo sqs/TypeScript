@@ -4,12 +4,12 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(6,11): e
 tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(7,11): error TS2322: Type '{ ...T, ...U, ...V }' is not assignable to type '{ ...T, ...V }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(8,11): error TS2322: Type '{ ...T, ...U, ...V }' is not assignable to type '{ ...T, ...U }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(13,11): error TS2322: Type '{}' is not assignable to type '{ ...T, ...U }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(25,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; second: string; }, ...T, ...{ third: string; } }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(33,11): error TS2322: Type '{ ...{ firrrrrrst: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(26,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; second: string; }, ...T, ...{ third: string; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(34,11): error TS2322: Type '{ ...{ firrrrrrst: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
   Property 'first' is missing in type '{ ...{ firrrrrrst: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(35,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ ssssssssecond: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(36,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ ssssssssecond: string; }, ...U, ...{ third: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
   Property 'second' is missing in type '{ ...{ first: string; }, ...T, ...{ ssssssssecond: string; }, ...U, ...{ third: string; } }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(37,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ thirrrrrrrd: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(38,11): error TS2322: Type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ thirrrrrrrd: string; } }' is not assignable to type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ third: string; } }'.
   Property 'third' is missing in type '{ ...{ first: string; }, ...T, ...{ second: string; }, ...U, ...{ thirrrrrrrd: string; } }'.
 
 
@@ -43,7 +43,8 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementGeneric.ts(37,11): 
         let optionalNumber: { sn?: number };
         let optionalString: { sn?: string };
         let optionalBoolean: { sn?: boolean };
-        const unionCutoff: { ...T, sn?: number | string | boolean } = { ...optionalBoolean, ...t, ...optionalString, ...optionalNumber } // ok
+        const unionCutoff: { ...T, sn?: number | string | boolean } =
+            { ...optionalBoolean, ...t, ...optionalString, ...optionalNumber } // ok
         unionCutoff.sn; // ok
         const optionalCutoff = { ...t, ...optionalNumber }; // ok
         optionalCutoff.sn; // ok

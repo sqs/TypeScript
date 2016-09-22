@@ -15,7 +15,8 @@ function f<T, U, V>(t: T, u: U, v: V): void {
     let optionalNumber: { sn?: number };
     let optionalString: { sn?: string };
     let optionalBoolean: { sn?: boolean };
-    const unionCutoff: { ...T, sn?: number | string | boolean } = { ...optionalBoolean, ...t, ...optionalString, ...optionalNumber } // ok
+    const unionCutoff: { ...T, sn?: number | string | boolean } =
+        { ...optionalBoolean, ...t, ...optionalString, ...optionalNumber } // ok
     unionCutoff.sn; // ok
     const optionalCutoff = { ...t, ...optionalNumber }; // ok
     optionalCutoff.sn; // ok
