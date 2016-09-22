@@ -19997,6 +19997,11 @@ namespace ts {
                 }
             }
 
+            let result: TypeElement;
+            if (result = find(node.members, e => e.kind === SyntaxKind.SpreadTypeElement)) {
+                return grammarErrorOnNode(result, Diagnostics.Interface_declaration_cannot_contain_a_spread_property);
+            }
+
             return false;
         }
 

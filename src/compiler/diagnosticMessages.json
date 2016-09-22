@@ -1967,7 +1967,7 @@
         "category": "Error",
         "code": 2697
     },
-    "Cannot spread property '{0}' because it does not have a 'get' accessor.": {
+    "Interface declaration cannot contain a spread property.": {
         "category": "Error",
         "code": 2698
     },
