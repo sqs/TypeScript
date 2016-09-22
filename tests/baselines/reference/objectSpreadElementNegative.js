@@ -42,6 +42,12 @@ let c: C = new C()
 let spreadC = { ...c }
 spreadC.m(); // error 'm' is not in '{ ... c }'
 
+let callableConstructableSpread: { ...PublicX, (n: number): number, new (p: number) };
+callableConstructableSpread(12); // error, no call signature
+new callableConstructableSpread(12); // error, no construct signature
+
+let callableSpread = { ...publicx, ...(n => n + 1) }; // error, can't spread functions
+
 
 //// [objectSpreadElementNegative.js]
 var __assign = (this && this.__assign) || Object.assign || function(t) {
@@ -96,3 +102,7 @@ var C = (function () {
 var c = new C();
 var spreadC = __assign({}, c);
 spreadC.m(); // error 'm' is not in '{ ... c }'
+var callableConstructableSpread;
+callableConstructableSpread(12); // error, no call signature
+new callableConstructableSpread(12); // error, no construct signature
+var callableSpread = __assign({}, publicx, (function (n) { return n + 1; })); // error, can't spread functions

@@ -9,9 +9,12 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,36):
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,53): error TS2300: Duplicate identifier 'b'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(36,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(42,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(45,1): error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ ...PublicX }' has no compatible call signatures.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(46,1): error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(48,39): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
 
 
-==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (10 errors) ====
+==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (13 errors) ====
     let o = { a: 1, b: 'no' }
     
     /// private propagates
@@ -75,4 +78,16 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(42,9): 
     spreadC.m(); // error 'm' is not in '{ ... c }'
             ~
 !!! error TS2339: Property 'm' does not exist on type '{ ...C }'.
+    
+    let callableConstructableSpread: { ...PublicX, (n: number): number, new (p: number) };
+    callableConstructableSpread(12); // error, no call signature
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ ...PublicX }' has no compatible call signatures.
+    new callableConstructableSpread(12); // error, no construct signature
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
+    
+    let callableSpread = { ...publicx, ...(n => n + 1) }; // error, can't spread functions
+                                          ~~~~~~~~~~~~
+!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
     

@@ -41,3 +41,9 @@ class C { p = 1; m() { } }
 let c: C = new C()
 let spreadC = { ...c }
 spreadC.m(); // error 'm' is not in '{ ... c }'
+
+let callableConstructableSpread: { ...PublicX, (n: number): number, new (p: number) };
+callableConstructableSpread(12); // error, no call signature
+new callableConstructableSpread(12); // error, no construct signature
+
+let callableSpread = { ...publicx, ...(n => n + 1) }; // error, can't spread functions
