@@ -4597,9 +4597,9 @@ namespace ts {
                     if (type !== unknownType) {
                         const prop = getPropertyOfType(type, name);
                         if (prop) {
-                            if (prop.flags & SymbolFlags.Method ||
+                            if (prop.flags & SymbolFlags.Method && !types[i].isOwn ||
                                 prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
-                                // skip methods and set-only properties and keep looking
+                                // skip non-object-literal methods and set-only properties and keep looking
                                 continue;
                             }
                             if (!props) {
@@ -5694,14 +5694,16 @@ namespace ts {
                 let type: ObjectType;
                 if (isSpread) {
                     let members: Map<Symbol>;
-                    const types: Type[] = [];
+                    const types: SpreadElementType[] = [];
                     for (const e of (node as TypeLiteralNode).members) {
                         if (e.kind === SyntaxKind.SpreadTypeElement) {
                             if (members) {
-                                types.push(createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined));
+                                const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined) as SpreadElementType;
+                                t.isOwn = true;
+                                types.push(t);
                                 members = undefined;
                             }
-                            types.push(getTypeFromTypeNode((e as SpreadTypeElement).type));
+                            types.push(getTypeFromTypeNode((e as SpreadTypeElement).type) as SpreadElementType);
                         }
                         else {
                             // TODO: Copied from getTypeFromObjectBinding, but slimmed down enough that it's surely missing a lot of things
@@ -5722,7 +5724,9 @@ namespace ts {
                         }
                     }
                     if (members) {
-                        types.push(createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined));
+                        const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined) as SpreadElementType;
+                        t.isOwn = true;
+                        types.push(t);
                     }
                     return getSpreadType(types, node.symbol);
                 }
@@ -5736,7 +5740,7 @@ namespace ts {
             return links.resolvedType;
         }
 
-        function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
+        function getSpreadType(types: SpreadElementType[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
             const id = getTypeListId(types);
             if (id in spreadTypes) {
                 return spreadTypes[id];
@@ -6139,7 +6143,7 @@ namespace ts {
                     return getIntersectionType(instantiateList((<IntersectionType>type).types, mapper, instantiateType), type.aliasSymbol, mapper.targetTypes);
                 }
                 if (type.flags & TypeFlags.Spread) {
-                    return getSpreadType(instantiateList((type as SpreadType).types, mapper, instantiateType), type.symbol, type.aliasSymbol, mapper.targetTypes);
+                    return getSpreadType(instantiateList((type as SpreadType).types, mapper, instantiateType) as SpreadElementType[], type.symbol, type.aliasSymbol, mapper.targetTypes);
                 }
             }
             return type;
@@ -10408,7 +10412,7 @@ namespace ts {
 
             let propertiesTable = createMap<Symbol>();
             let propertiesArray: Symbol[] = []; // this should really just be Object.values(propertiesTable)
-            const spreads: Type[] = [];
+            const spreads: SpreadElementType[] = [];
             const contextualType = getApparentTypeOfContextualType(node);
             const contextualTypeHasPattern = contextualType && contextualType.pattern &&
                 (contextualType.pattern.kind === SyntaxKind.ObjectBindingPattern || contextualType.pattern.kind === SyntaxKind.ObjectLiteralExpression);
@@ -10483,13 +10487,15 @@ namespace ts {
                         const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
                         const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
                         // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                        spreads.push(createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo));
+                        const t = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo) as SpreadElementType;
+                        t.isOwn = true;
+                        spreads.push(t);
                         propertiesArray = [];
                         propertiesTable = createMap<Symbol>();
                         hasComputedStringProperty = false;
                         hasComputedNumberProperty = false;
                     }
-                    spreads.push(checkExpression((memberDecl as SpreadElement).target));
+                    spreads.push(checkExpression((memberDecl as SpreadElement).target) as SpreadElementType);
                     continue;
                 }
                 else {
@@ -10521,7 +10527,9 @@ namespace ts {
                     const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
                     const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
                     // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                    spreads.push(createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo));
+                    const t = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo) as SpreadElementType;
+                    t.isOwn = true;
+                    spreads.push(t);
                     propertiesArray = [];
                     propertiesTable = createMap<Symbol>();
                     hasComputedStringProperty = false;

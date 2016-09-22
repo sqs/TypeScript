@@ -2519,7 +2519,15 @@ namespace ts {
 
     export interface IntersectionType extends UnionOrIntersectionType { }
 
-    export interface SpreadType extends UnionOrIntersectionType { }
+    /* @internal */
+    export interface SpreadType extends UnionOrIntersectionType {
+        types: SpreadElementType[];       // Constituent types
+    }
+
+    /* @internal */
+    export interface SpreadElementType extends ResolvedType {
+        isOwn: boolean | undefined;
+    }
 
     /* @internal */
     // An instantiated anonymous type has a target and a mapper
