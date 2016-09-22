@@ -5695,28 +5695,25 @@ namespace ts {
                 if (isSpread) {
                     let members: Map<Symbol>;
                     const types: SpreadElementType[] = [];
-                    for (const e of (node as TypeLiteralNode).members) {
-                        if (e.kind === SyntaxKind.SpreadTypeElement) {
+                    for (const member of (node as TypeLiteralNode).members) {
+                        if (member.kind === SyntaxKind.SpreadTypeElement) {
                             if (members) {
                                 const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined) as SpreadElementType;
                                 t.isOwn = true;
                                 types.push(t);
                                 members = undefined;
                             }
-                            types.push(getTypeFromTypeNode((e as SpreadTypeElement).type) as SpreadElementType);
+                            types.push(getTypeFromTypeNode((member as SpreadTypeElement).type) as SpreadElementType);
                         }
-                        else {
+                        else if (member.kind !== SyntaxKind.CallSignature && member.kind !== SyntaxKind.ConstructSignature) {
                             // TODO: Copied from getTypeFromObjectBinding, but slimmed down enough that it's surely missing a lot of things
                             // TODO: Put errors back in someday.
-                            const name = <Identifier>e.name;
-                            const text = getTextOfPropertyName(name);
                             // TODO: Creating a symbol should already have a function that I can just call
-                            const flags = SymbolFlags.Property | SymbolFlags.Transient | (e.questionToken ? SymbolFlags.Optional : 0);
+                            const e = member as (IndexSignatureDeclaration | PropertySignature | MethodSignature);
+                            const flags = SymbolFlags.Property | SymbolFlags.Transient | (member.questionToken ? SymbolFlags.Optional : 0);
+                            const text = getTextOfPropertyName(e.name as Identifier);
                             const symbol = <TransientSymbol>createSymbol(flags, text);
-                            if (e.kind === SyntaxKind.PropertySignature) {
-                                // TODO:e could be a bunch of things, but ignore things like computed properties for now ...
-                                symbol.type = getTypeFromTypeNodeNoAlias((e as PropertySignature).type);
-                            }
+                            symbol.type = getTypeFromTypeNodeNoAlias(e.type);
                             if (!members) {
                                 members = createMap<Symbol>();
                             }
