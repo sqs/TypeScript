@@ -3123,30 +3123,31 @@ namespace ts {
         ContainsTypeScript = 1 << 1,
         Jsx = 1 << 2,
         ContainsJsx = 1 << 3,
-        ES7 = 1 << 4,
-        ContainsES7 = 1 << 5,
-        ES6 = 1 << 6,
-        ContainsES6 = 1 << 7,
-        DestructuringAssignment = 1 << 8,
-        Generator = 1 << 9,
-        ContainsGenerator = 1 << 10,
-        // TODO: Probably need an [ES]Experimental flag here instead. Right I'm just using ES7.
+        Experimental = 1 << 4,
+        ContainsExperimental = 1 << 5,
+        ES7 = 1 << 6,
+        ContainsES7 = 1 << 7,
+        ES6 = 1 << 8,
+        ContainsES6 = 1 << 9,
+        DestructuringAssignment = 1 << 10,
+        Generator = 1 << 11,
+        ContainsGenerator = 1 << 12,
 
         // Markers
         // - Flags used to indicate that a subtree contains a specific transformation.
-        ContainsDecorators = 1 << 11,
-        ContainsPropertyInitializer = 1 << 12,
-        ContainsLexicalThis = 1 << 13,
-        ContainsCapturedLexicalThis = 1 << 14,
-        ContainsLexicalThisInComputedPropertyName = 1 << 15,
-        ContainsDefaultValueAssignments = 1 << 16,
-        ContainsParameterPropertyAssignments = 1 << 17,
-        ContainsSpreadElementExpression = 1 << 18,
-        ContainsComputedPropertyName = 1 << 19,
-        ContainsBlockScopedBinding = 1 << 20,
-        ContainsBindingPattern = 1 << 21,
-        ContainsYield = 1 << 22,
-        ContainsHoistedDeclarationOrCompletion = 1 << 23,
+        ContainsDecorators = 1 << 13,
+        ContainsPropertyInitializer = 1 << 14,
+        ContainsLexicalThis = 1 << 15,
+        ContainsCapturedLexicalThis = 1 << 16,
+        ContainsLexicalThisInComputedPropertyName = 1 << 17,
+        ContainsDefaultValueAssignments = 1 << 18,
+        ContainsParameterPropertyAssignments = 1 << 19,
+        ContainsSpreadElementExpression = 1 << 20,
+        ContainsComputedPropertyName = 1 << 21,
+        ContainsBlockScopedBinding = 1 << 22,
+        ContainsBindingPattern = 1 << 23,
+        ContainsYield = 1 << 24,
+        ContainsHoistedDeclarationOrCompletion = 1 << 25,
 
         HasComputedFlags = 1 << 29, // Transform flags have been computed.
 
@@ -3154,6 +3155,7 @@ namespace ts {
         // - Bitmasks that are used to assert facts about the syntax of a node and its subtree.
         AssertTypeScript = TypeScript | ContainsTypeScript,
         AssertJsx = Jsx | ContainsJsx,
+        AssertExperimental = Experimental | ContainsExperimental,
         AssertES7 = ES7 | ContainsES7,
         AssertES6 = ES6 | ContainsES6,
         AssertGenerator = Generator | ContainsGenerator,
@@ -3161,7 +3163,7 @@ namespace ts {
         // Scope Exclusions
         // - Bitmasks that exclude flags from propagating out of a specific context
         //   into the subtree flags of their container.
-        NodeExcludes = TypeScript | Jsx | ES7 | ES6 | DestructuringAssignment | Generator | HasComputedFlags,
+        NodeExcludes = TypeScript | Jsx | Experimental | ES7 | ES6 | DestructuringAssignment | Generator | HasComputedFlags,
         ArrowFunctionExcludes = NodeExcludes | ContainsDecorators | ContainsDefaultValueAssignments | ContainsLexicalThis | ContainsParameterPropertyAssignments | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,
         FunctionExcludes = NodeExcludes | ContainsDecorators | ContainsDefaultValueAssignments | ContainsCapturedLexicalThis | ContainsLexicalThis | ContainsParameterPropertyAssignments | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,
         ConstructorExcludes = NodeExcludes | ContainsDefaultValueAssignments | ContainsLexicalThis | ContainsCapturedLexicalThis | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,

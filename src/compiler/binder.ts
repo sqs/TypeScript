@@ -3001,7 +3001,7 @@ namespace ts {
                 if (subtreeFlags & TransformFlags.ContainsSpreadElementExpression) {
                     // If an ObjectLiteralExpression contains a spread element, then it
                     // is an ES experimental node.
-                    transformFlags |= TransformFlags.AssertES7;
+                    transformFlags |= TransformFlags.AssertExperimental;
                 }
 
                 break;
