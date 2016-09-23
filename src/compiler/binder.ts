@@ -1812,9 +1812,6 @@ namespace ts {
                     return bindParameter(<ParameterDeclaration>node);
                 case SyntaxKind.VariableDeclaration:
                 case SyntaxKind.BindingElement:
-                    if ((<BindingElement>node).dotDotDotToken && node.parent.kind === SyntaxKind.ObjectBindingPattern) {
-                        emitFlags |= NodeFlags.HasRestAttribute;
-                    }
                     return bindVariableDeclarationOrBindingElement(<VariableDeclaration | BindingElement>node);
                 case SyntaxKind.PropertyDeclaration:
                 case SyntaxKind.PropertySignature:

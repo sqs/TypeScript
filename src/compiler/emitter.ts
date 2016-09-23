@@ -39,16 +39,6 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };`;
 
-        const restHelper = `
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && !e.indexOf(p))
-        t[p] = s[p];
-    return t;
-};`;
-
-        // emit output for the __decorate helper function
         const decorateHelper = `
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -2208,11 +2198,6 @@ const _super = (function (geti, seti) {
             if (compilerOptions.jsx !== JsxEmit.Preserve && !assignEmitted && (node.flags & NodeFlags.HasSpreadAttribute)) {
                 writeLines(assignHelper);
                 assignEmitted = true;
-            }
-
-            if (!restEmitted && node.flags & NodeFlags.HasRestAttribute) {
-                writeLines(restHelper);
-                restEmitted = true;
             }
 
             if (!decorateEmitted && node.flags & NodeFlags.HasDecorators) {

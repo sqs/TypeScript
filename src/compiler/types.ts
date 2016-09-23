@@ -416,15 +416,14 @@ namespace ts {
         HasParamDecorators = 1 << 12, // If the file has parameter decorators (initialized by binding)
         HasAsyncFunctions =  1 << 13, // If the file has async functions (initialized by binding)
         HasSpreadAttribute = 1 << 14, // If the file as JSX spread attributes (initialized by binding)
-        HasRestAttribute  =  1 << 15, // TODO: Looks like some other solution exists for this in transforms
-        DisallowInContext =  1 << 16, // If node was parsed in a context where 'in-expressions' are not allowed
-        YieldContext =       1 << 17, // If node was parsed in the 'yield' context created when parsing a generator
-        DecoratorContext =   1 << 18, // If node was parsed as part of a decorator
-        AwaitContext =       1 << 19, // If node was parsed in the 'await' context created when parsing an async function
-        ThisNodeHasError =   1 << 20, // If the parser encountered an error when parsing the code that created this node
-        JavaScriptFile =     1 << 21, // If node was parsed in a JavaScript
-        ThisNodeOrAnySubNodesHasError = 1 << 22, // If this node or any of its children had an error
-        HasAggregatedChildData = 1 << 23, // If we've computed data from children and cached it in this node
+        DisallowInContext =  1 << 15, // If node was parsed in a context where 'in-expressions' are not allowed
+        YieldContext =       1 << 16, // If node was parsed in the 'yield' context created when parsing a generator
+        DecoratorContext =   1 << 17, // If node was parsed as part of a decorator
+        AwaitContext =       1 << 18, // If node was parsed in the 'await' context created when parsing an async function
+        ThisNodeHasError =   1 << 19, // If the parser encountered an error when parsing the code that created this node
+        JavaScriptFile =     1 << 20, // If node was parsed in a JavaScript
+        ThisNodeOrAnySubNodesHasError = 1 << 21, // If this node or any of its children had an error
+        HasAggregatedChildData = 1 << 22, // If we've computed data from children and cached it in this node
 
         BlockScoped = Let | Const,
 
@@ -454,9 +453,6 @@ namespace ts {
         Async =              1 << 8,  // Property/Method/Function
         Default =            1 << 9,  // Function/Class (export default declaration)
         Const =              1 << 11, // Variable declaration
-        // TODO: Turn these into modifier flags too
-        HasSpreadAttribute = 1 << 12,
-        HasRestAttribute = 1 << 13,
         HasComputedFlags =   1 << 29, // Modifier flags have been computed
 
         AccessibilityModifier = Public | Private | Protected,
