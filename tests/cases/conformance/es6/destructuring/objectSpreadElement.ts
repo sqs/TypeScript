@@ -74,6 +74,9 @@ let computedMiddle: { a: number, b: string, c: boolean, "in the middle": number 
     { ...o, ['in the middle']: 13, b: 'maybe?', ...o2 }
 let computedAfter: { a: number, b: string, "at the end": number } =
     { ...o, b: 'yeah', ['at the end']: 14 }
+// shortcut syntax
+let a = 12;
+let shortCutted: { a: number, b: string } = { ...o, a }
 
 // generics
 function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {

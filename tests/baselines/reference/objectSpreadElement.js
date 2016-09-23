@@ -74,6 +74,9 @@ let computedMiddle: { a: number, b: string, c: boolean, "in the middle": number 
     { ...o, ['in the middle']: 13, b: 'maybe?', ...o2 }
 let computedAfter: { a: number, b: string, "at the end": number } =
     { ...o, b: 'yeah', ['at the end']: 14 }
+// shortcut syntax
+let a = 12;
+let shortCutted: { a: number, b: string } = { ...o, a }
 
 // generics
 function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
@@ -155,6 +158,9 @@ var allOptional = __assign({}, optionalString, optionalNumber);
 var computedFirst = __assign((_a = {}, _a['before everything'] = 12, _a), o, { b: 'yes' });
 var computedMiddle = __assign({}, o, (_b = {}, _b['in the middle'] = 13, _b.b = 'maybe?', _b), o2);
 var computedAfter = __assign({}, o, (_c = { b: 'yeah' }, _c['at the end'] = 14, _c));
+// shortcut syntax
+var a = 12;
+var shortCutted = __assign({}, o, { a: a });
 // generics
 function f(t, u) {
     return __assign({ id: 'id' }, t, u);

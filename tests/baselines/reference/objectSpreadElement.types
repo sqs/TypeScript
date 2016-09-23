@@ -399,6 +399,19 @@ let computedAfter: { a: number, b: string, "at the end": number } =
 >'at the end' : "at the end"
 >14 : 14
 
+// shortcut syntax
+let a = 12;
+>a : number
+>12 : 12
+
+let shortCutted: { a: number, b: string } = { ...o, a }
+>shortCutted : { a: number; b: string; }
+>a : number
+>b : string
+>{ ...o, a } : { ...{ a: number; b: string; }, ...{ a: number; } }
+>o : any
+>a : number
+
 // generics
 function f<T, U>(t: T, u: U): { id: string, ...T, ...U } {
 >f : <T, U>(t: T, u: U) => { ...{ id: string; }, ...T, ...U }
