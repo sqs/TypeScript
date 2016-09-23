@@ -9,10 +9,10 @@ verify.assertHasRanges(ranges);
 
 // A1 unions with A2, so rename A1.a and a12.a
 goTo.position(ranges[0].start);
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[0], ranges[2]] );
+verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[0], ranges[2]]);
 // A1 unions with A2, so rename A2.a and a12.a
 goTo.position(ranges[1].start);
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[0], ranges[2]] );
+verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[1], ranges[2]]);
 // a12.a unions A1.a and A2.a, so rename A1.a, A2.a and a12.a
 goTo.position(ranges[2].start);
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[0], ranges[1], ranges[2]] );
+verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false, [ranges[0], ranges[1], ranges[2]]);
