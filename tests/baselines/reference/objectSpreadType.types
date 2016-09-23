@@ -1,6 +1,6 @@
 === tests/cases/conformance/es6/destructuring/objectSpreadType.ts ===
 function f<T,U>(t: T, u: U): { id: string, ...T, ...U } {
->f : <T, U>(t: T, u: U) => { ...{ id: string; }, ...T, ...U }
+>f : <T, U>(t: T, u: U) => { id: string; ...T; ...U }
 >T : T
 >U : U
 >t : T
@@ -12,17 +12,17 @@ function f<T,U>(t: T, u: U): { id: string, ...T, ...U } {
 >U : U
 
     var spreads: { id: string, ...T, ...U } = { id: '1', ...t, ...u };
->spreads : { ...{ id: string; }, ...T, ...U }
+>spreads : { id: string; ...T; ...U }
 >id : string
 >T : T
 >U : U
->{ id: '1', ...t, ...u } : { ...{ id: string; }, ...T, ...U }
+>{ id: '1', ...t, ...u } : { id: string; ...T; ...U }
 >id : string
 >'1' : "1"
 >t : any
 >u : any
 
     return spreads;
->spreads : { ...{ id: string; }, ...T, ...U }
+>spreads : { id: string; ...T; ...U }
 }
 
