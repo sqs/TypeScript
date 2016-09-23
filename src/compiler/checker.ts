@@ -2299,22 +2299,29 @@ namespace ts {
                 }
 
                 function writeSpreadType(type: SpreadType, flags: TypeFormatFlags) {
-                    // Ultimately you'll want to actually instantiate all the properties the way you would in a real system.
-                    // I think. Or just keep a boolean list of what was originally spread or not.
-                    // Or take a look at the original declaration? Or take a look FOR the original declaration -- if there's not one, it's synthetic
-                    // and should be flattened.
-                    // ANYWAY. I think the code will look a lot like writeLiteralType at that point. So start there.
                     writePunctuation(writer, SyntaxKind.OpenBraceToken);
-                    writeSpace(writer);
-                    for (let i = 0; i < type.types.length; i++) {
-                        if (i > 0) {
-                            writePunctuation(writer, SyntaxKind.CommaToken);
-                            writeSpace(writer);
+                    writer.writeLine();
+                    writer.increaseIndent();
+                    let printFollowingPunctuation = false;
+                    for (const t of type.types) {
+                        if (printFollowingPunctuation) {
+                            writePunctuation(writer, SyntaxKind.SemicolonToken);
+                            writer.writeLine();
                         }
-                        writePunctuation(writer, SyntaxKind.DotDotDotToken);
-                        writeType(type.types[i], TypeFormatFlags.None);
+                        if (t.isOwn) {
+                            writeLiteralTypeCore(resolveStructuredTypeMembers(t));
+                            printFollowingPunctuation = false;
+                        }
+                        else {
+                            writePunctuation(writer, SyntaxKind.DotDotDotToken);
+                            writeType(t, TypeFormatFlags.None);
+                            printFollowingPunctuation = true;
+                        }
                     }
-                    writeSpace(writer);
+                    writer.decreaseIndent();
+                    if (printFollowingPunctuation) {
+                        writeSpace(writer);
+                    }
                     writePunctuation(writer, SyntaxKind.CloseBraceToken);
                 }
 
@@ -2470,6 +2477,13 @@ namespace ts {
                         writePunctuation(writer, SyntaxKind.SemicolonToken);
                         writer.writeLine();
                     }
+                    writeLiteralTypeCore(resolved);
+                    writer.decreaseIndent();
+                    writePunctuation(writer, SyntaxKind.CloseBraceToken);
+                    inObjectTypeLiteral = saveInObjectTypeLiteral;
+                }
+
+                function writeLiteralTypeCore(resolved: ResolvedType) {
                     writeIndexSignature(resolved.stringIndexInfo, SyntaxKind.StringKeyword);
                     writeIndexSignature(resolved.numberIndexInfo, SyntaxKind.NumberKeyword);
                     for (const p of resolved.properties) {
@@ -2492,11 +2506,8 @@ namespace ts {
                             writer.writeLine();
                         }
                     }
-                    writer.decreaseIndent();
-                    writePunctuation(writer, SyntaxKind.CloseBraceToken);
-                    inObjectTypeLiteral = saveInObjectTypeLiteral;
                 }
-            }
+           }
 
             function buildTypeParameterDisplayFromSymbol(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags) {
                 const targetSymbol = getTargetSymbol(symbol);

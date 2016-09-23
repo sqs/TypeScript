@@ -39,6 +39,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };`;
 
+        // emit output for the __decorate helper function
         const decorateHelper = `
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -224,7 +225,6 @@ const _super = (function (geti, seti) {
         let currentFileIdentifiers: Map<string>;
         let extendsEmitted: boolean;
         let assignEmitted: boolean;
-        let restEmitted: boolean;
         let decorateEmitted: boolean;
         let paramEmitted: boolean;
         let awaiterEmitted: boolean;
