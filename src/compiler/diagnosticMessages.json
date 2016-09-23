@@ -1959,17 +1959,21 @@
         "category": "Error",
         "code": 2695
     },
-    "Spread properties must be identifiers, property accesses, or object literals.": {
+    "The 'Object' type is assignable to very few other types. Did you mean to use the 'any' type instead?": {
         "category": "Error",
         "code": 2696
     },
-    "Cannot change type of property '{0}' from '{1}' to '{2}'.": {
+    "Spread properties must be identifiers, property accesses, or object literals.": {
         "category": "Error",
         "code": 2697
     },
-    "Interface declaration cannot contain a spread property.": {
+    "Cannot change type of property '{0}' from '{1}' to '{2}'.": {
         "category": "Error",
         "code": 2698
+    },
+    "Interface declaration cannot contain a spread property.": {
+        "category": "Error",
+        "code": 2699
     },
 
     "Import declaration '{0}' is using private name '{1}'.": {

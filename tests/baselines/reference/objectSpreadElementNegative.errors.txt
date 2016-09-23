@@ -3,15 +3,15 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(16,5): 
   Property 'sn' is optional in type '{ ...{ sn?: string; }, ...{ sn?: number; } }' but required in type '{ sn: string | number; }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(22,5): error TS2322: Type '{ s: string; }' is not assignable to type '{ ...Bool, ...Str }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(24,1): error TS2322: Type 'Bool' is not assignable to type '{ ...Bool, ...Str }'.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(27,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(28,15): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(27,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(28,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,36): error TS2300: Duplicate identifier 'b'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(31,53): error TS2300: Duplicate identifier 'b'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(36,12): error TS2339: Property 'b' does not exist on type '{ ...{ b: number; } }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(42,9): error TS2339: Property 'm' does not exist on type '{ ...C }'.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(45,1): error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ ...PublicX }' has no compatible call signatures.
 tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(46,1): error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
-tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(48,39): error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(48,39): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
 
 
 ==== tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts (13 errors) ====
@@ -52,10 +52,10 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(48,39):
     // expressions are not allowed
     let o1 = { ...1 + 1 };
                   ~~~~~
-!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+!!! error TS2697: Spread properties must be identifiers, property accesses, or object literals.
     let o2 = { ...(1 + 1) };
                   ~~~~~~~
-!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+!!! error TS2697: Spread properties must be identifiers, property accesses, or object literals.
     
     // literal repeats are not allowed, but spread repeats are fine
     let duplicated = { b: 'bad', ...o, b: 'bad', ...o2, b: 'bad' }
@@ -89,5 +89,5 @@ tests/cases/conformance/es6/destructuring/objectSpreadElementNegative.ts(48,39):
     
     let callableSpread = { ...publicx, ...(n => n + 1) }; // error, can't spread functions
                                           ~~~~~~~~~~~~
-!!! error TS2696: Spread properties must be identifiers, property accesses, or object literals.
+!!! error TS2697: Spread properties must be identifiers, property accesses, or object literals.
     

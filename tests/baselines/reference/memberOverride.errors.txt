@@ -1,5 +1,5 @@
 tests/cases/compiler/memberOverride.ts(5,5): error TS2300: Duplicate identifier 'a'.
-tests/cases/compiler/memberOverride.ts(5,5): error TS2697: Cannot change type of property 'a' from 'string' to 'number'.
+tests/cases/compiler/memberOverride.ts(5,5): error TS2698: Cannot change type of property 'a' from 'string' to 'number'.
 
 
 ==== tests/cases/compiler/memberOverride.ts (2 errors) ====
@@ -11,7 +11,7 @@ tests/cases/compiler/memberOverride.ts(5,5): error TS2697: Cannot change type of
         ~
 !!! error TS2300: Duplicate identifier 'a'.
         ~
-!!! error TS2697: Cannot change type of property 'a' from 'string' to 'number'.
+!!! error TS2698: Cannot change type of property 'a' from 'string' to 'number'.
     }
     
     var n: number = x.a;
