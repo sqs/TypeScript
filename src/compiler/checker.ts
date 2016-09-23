@@ -6676,7 +6676,7 @@ namespace ts {
                     for (let i = 0; i < sourceParameters.length; i++) {
                         if (sourceParameters[i].symbol !== targetParameters[i].symbol) {
                             reportRelationError(headMessage, source, target);
-                            return Ternary.False
+                            return Ternary.False;
                         }
                     }
                     const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
