@@ -639,7 +639,6 @@ namespace ts {
 
     // @kind(SyntaxKind.SpreadTypeElement)
     export interface SpreadTypeElement extends TypeElement {
-        // so this is basically a BindingElement almost
         type: TypeNode;
     }
 
@@ -2289,7 +2288,7 @@ namespace ts {
         instantiations?: Map<Type>;         // Instantiations of generic type alias (undefined if non-generic)
         mapper?: TypeMapper;                // Type mapper for instantiation alias
         referenced?: boolean;               // True if alias symbol has been referenced as a value
-        containingType?: UnionOrIntersectionType; // Containing union or intersection type for synthetic property
+        containingType?: TypeOperatorType; // Containing union or intersection type for synthetic property
         hasCommonType?: boolean;            // True if constituents of synthetic property all have same type
         isDiscriminantProperty?: boolean;   // True if discriminant synthetic property
         resolvedExports?: SymbolTable;      // Resolved exports of module
@@ -2502,8 +2501,7 @@ namespace ts {
         instantiations: Map<TypeReference>;   // Generic instantiation cache
     }
 
-    // TypeOperator? TypeOperatorType? OperatorType?
-    export interface UnionOrIntersectionType extends Type {
+    export interface TypeOperatorType extends Type {
         types: Type[];                    // Constituent types
         /* @internal */
         resolvedProperties: SymbolTable;  // Cache of resolved properties
@@ -2511,18 +2509,18 @@ namespace ts {
         couldContainTypeParameters: boolean;
     }
 
-    export interface UnionType extends UnionOrIntersectionType { }
+    export interface UnionType extends TypeOperatorType { }
 
-    export interface IntersectionType extends UnionOrIntersectionType { }
+    export interface IntersectionType extends TypeOperatorType { }
 
     /* @internal */
-    export interface SpreadType extends UnionOrIntersectionType {
+    export interface SpreadType extends TypeOperatorType {
         types: SpreadElementType[];       // Constituent types
     }
 
     /* @internal */
     export interface SpreadElementType extends ResolvedType {
-        isOwn: boolean | undefined;
+        isDeclaredProperty: boolean | undefined;
     }
 
     /* @internal */
@@ -2534,7 +2532,7 @@ namespace ts {
 
     /* @internal */
     // Resolved object, spread, union, or intersection type
-    export interface ResolvedType extends ObjectType, UnionOrIntersectionType {
+    export interface ResolvedType extends ObjectType, TypeOperatorType {
         members: SymbolTable;              // Properties by name
         properties: Symbol[];              // Properties
         callSignatures: Signature[];       // Call signatures of type

@@ -2186,7 +2186,7 @@ namespace ts {
                         writeSymbolTypeReference(type.aliasSymbol, typeArguments, 0, typeArguments ? typeArguments.length : 0, nextFlags);
                     }
                     else if (type.flags & TypeFlags.UnionOrIntersection) {
-                        writeUnionOrIntersectionType(<UnionOrIntersectionType>type, nextFlags);
+                        writeUnionOrIntersectionType(<TypeOperatorType>type, nextFlags);
                     }
                     else if (type.flags & TypeFlags.Spread) {
                         writeSpreadType(<SpreadType>type, nextFlags);
@@ -2283,7 +2283,7 @@ namespace ts {
                     }
                 }
 
-                function writeUnionOrIntersectionType(type: UnionOrIntersectionType, flags: TypeFormatFlags) {
+                function writeUnionOrIntersectionType(type: TypeOperatorType, flags: TypeFormatFlags) {
                     if (flags & TypeFormatFlags.InElementType) {
                         writePunctuation(writer, SyntaxKind.OpenParenToken);
                     }
@@ -2308,9 +2308,12 @@ namespace ts {
                             writePunctuation(writer, SyntaxKind.SemicolonToken);
                             writer.writeLine();
                         }
-                        if (t.isOwn) {
-                            writeLiteralTypeCore(resolveStructuredTypeMembers(t));
+                        if (t.isDeclaredProperty) {
+                            const saveInObjectTypeLiteral = inObjectTypeLiteral;
+                            inObjectTypeLiteral = true;
+                            writeObjectLiteralType(resolveStructuredTypeMembers(t));
                             printFollowingPunctuation = false;
+                            inObjectTypeLiteral = saveInObjectTypeLiteral;
                         }
                         else {
                             writePunctuation(writer, SyntaxKind.DotDotDotToken);
@@ -2467,6 +2470,13 @@ namespace ts {
                     writePunctuation(writer, SyntaxKind.OpenBraceToken);
                     writer.writeLine();
                     writer.increaseIndent();
+                    writeObjectLiteralType(resolved);
+                    writer.decreaseIndent();
+                    writePunctuation(writer, SyntaxKind.CloseBraceToken);
+                    inObjectTypeLiteral = saveInObjectTypeLiteral;
+                }
+
+                function writeObjectLiteralType(resolved: ResolvedType) {
                     for (const signature of resolved.callSignatures) {
                         buildSignatureDisplay(signature, writer, enclosingDeclaration, globalFlagsToPass, /*kind*/ undefined, symbolStack);
                         writePunctuation(writer, SyntaxKind.SemicolonToken);
@@ -2477,13 +2487,6 @@ namespace ts {
                         writePunctuation(writer, SyntaxKind.SemicolonToken);
                         writer.writeLine();
                     }
-                    writeLiteralTypeCore(resolved);
-                    writer.decreaseIndent();
-                    writePunctuation(writer, SyntaxKind.CloseBraceToken);
-                    inObjectTypeLiteral = saveInObjectTypeLiteral;
-                }
-
-                function writeLiteralTypeCore(resolved: ResolvedType) {
                     writeIndexSignature(resolved.stringIndexInfo, SyntaxKind.StringKeyword);
                     writeIndexSignature(resolved.numberIndexInfo, SyntaxKind.NumberKeyword);
                     for (const p of resolved.properties) {
@@ -4413,10 +4416,11 @@ namespace ts {
             }
         }
 
-        function getPropertiesOfUnionOrIntersectionType(type: UnionOrIntersectionType): Symbol[] {
+        function getPropertiesOfUnionOrIntersectionOrSpreadType(type: TypeOperatorType): Symbol[] {
+            const getProperty = type.flags & TypeFlags.Spread ? getPropertyOfSpreadType : getPropertyOfUnionOrIntersectionType;
             for (const current of type.types) {
                 for (const prop of getPropertiesOfType(current)) {
-                    getPropertyOfUnionOrIntersectionType(type, prop.name);
+                    getProperty(type, prop.name);
                 }
                 // The properties of a union type are those that are present in all constituent types, so
                 // we only need to check the properties of the first type
@@ -4427,19 +4431,9 @@ namespace ts {
             return type.resolvedProperties ? symbolsToArray(type.resolvedProperties) : emptyArray;
         }
 
-        function getPropertiesOfSpreadType(type: SpreadType): Symbol[] {
-            for (const current of type.types) {
-                for (const prop of getPropertiesOfType(current)) {
-                    getPropertyOfSpreadType(type, prop.name);
-                }
-            }
-            return type.resolvedProperties ? symbolsToArray(type.resolvedProperties) : emptyArray;
-        }
-
         function getPropertiesOfType(type: Type): Symbol[] {
             type = getApparentType(type);
-            return type.flags & TypeFlags.UnionOrIntersection ? getPropertiesOfUnionOrIntersectionType(<UnionType>type) :
-                type.flags & TypeFlags.Spread ? getPropertiesOfSpreadType(<SpreadType>type) :
+            return type.flags & (TypeFlags.UnionOrIntersection | TypeFlags.Spread) ? getPropertiesOfUnionOrIntersectionOrSpreadType(<UnionType>type) :
                 getPropertiesOfObjectType(type);
         }
 
@@ -4466,7 +4460,7 @@ namespace ts {
         function getApparentType(type: Type): Type {
             if (type.flags & TypeFlags.TypeParameter) {
                 type = getApparentTypeOfTypeParameter(<TypeParameter>type);
-            }
+          }
             if (type.flags & TypeFlags.StringLike) {
                 type = globalStringType;
             }
@@ -4482,7 +4476,7 @@ namespace ts {
             return type;
         }
 
-        function createUnionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: string): Symbol {
+        function createUnionOrIntersectionProperty(containingType: TypeOperatorType, name: string): Symbol {
             const types = containingType.types;
             return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
                 let props: Symbol[];
@@ -4515,7 +4509,7 @@ namespace ts {
             });
         }
 
-        function createUnionOrIntersectionOrSpreadPropertySymbol(containingType: UnionOrIntersectionType,
+        function createUnionOrIntersectionOrSpreadPropertySymbol(containingType: TypeOperatorType,
                                                                  name: string,
                                                                  symbolCreator: () => [Symbol[], boolean, SymbolFlags]) {
             const [props, isReadonly, flags] = symbolCreator();
@@ -4552,11 +4546,11 @@ namespace ts {
             result.hasCommonType = hasCommonType;
             result.declarations = declarations;
             result.isReadonly = isReadonly;
-            result.type = containingType.flags & (TypeFlags.Union | TypeFlags.Spread) ? getUnionType(propTypes) : getIntersectionType(propTypes);
+            result.type = containingType.flags & TypeFlags.Intersection ? getIntersectionType(propTypes) : getUnionType(propTypes);
             return result;
         }
 
-        function getPropertyOfUnionOrIntersectionType(type: UnionOrIntersectionType, name: string): Symbol {
+        function getPropertyOfUnionOrIntersectionType(type: TypeOperatorType, name: string): Symbol {
             const properties = type.resolvedProperties || (type.resolvedProperties = createMap<Symbol>());
             let property = properties[name];
             if (!property) {
@@ -4581,7 +4575,7 @@ namespace ts {
                     if (type !== unknownType) {
                         const prop = getPropertyOfType(type, name);
                         if (prop) {
-                            if (prop.flags & SymbolFlags.Method && !types[i].isOwn ||
+                            if (prop.flags & SymbolFlags.Method && !types[i].isDeclaredProperty ||
                                 prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
                                 // skip non-object-literal methods and set-only properties and keep looking
                                 continue;
@@ -4611,11 +4605,11 @@ namespace ts {
             });
         }
 
-        function getPropertyOfSpreadType(type: SpreadType, name: string): Symbol {
+        function getPropertyOfSpreadType(type: TypeOperatorType, name: string): Symbol {
             const properties = type.resolvedProperties || (type.resolvedProperties = createMap<Symbol>());
             let property = properties[name];
             if (!property) {
-                property = createSpreadProperty(type, name);
+                property = createSpreadProperty(type as SpreadType, name);
                 if (property) {
                     properties[name] = property;
                 }
@@ -4648,7 +4642,7 @@ namespace ts {
                 return getPropertyOfObjectType(globalObjectType, name);
             }
             if (type.flags & TypeFlags.UnionOrIntersection) {
-                return getPropertyOfUnionOrIntersectionType(<UnionOrIntersectionType>type, name);
+                return getPropertyOfUnionOrIntersectionType(<TypeOperatorType>type, name);
             }
             if (type.flags & TypeFlags.Spread) {
                 return getPropertyOfSpreadType(<SpreadType>type, name);
@@ -5683,7 +5677,7 @@ namespace ts {
                         if (member.kind === SyntaxKind.SpreadTypeElement) {
                             if (members) {
                                 const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined) as SpreadElementType;
-                                t.isOwn = true;
+                                t.isDeclaredProperty = true;
                                 spreads.push(t);
                                 members = undefined;
                             }
@@ -5703,7 +5697,7 @@ namespace ts {
                     }
                     if (members) {
                         const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined) as SpreadElementType;
-                        t.isOwn = true;
+                        t.isDeclaredProperty = true;
                         spreads.push(t);
                     }
                     return getSpreadType(spreads, node.symbol);
@@ -6649,7 +6643,6 @@ namespace ts {
                 if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
                     const sourceParameters = filter((source as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter));
                     const targetParameters = filter((target as SpreadType).types, t => !!(t.flags & TypeFlags.TypeParameter));
-                    // TODO: Error elaboration is broken (seems to work when the target is a Spread though)
                     if (sourceParameters.length !== targetParameters.length) {
                         reportRelationError(headMessage, source, target);
                         return Ternary.False;
@@ -6665,10 +6658,6 @@ namespace ts {
                         errorInfo = saveErrorInfo;
                         return result;
                     }
-
-                    // also: If source is a spread type, then we still want to early-return a decision here IF it has type variables
-                    // that's because the normal structural comparison below doesn't work in the presence of type variables
-                    // (the above algorithm might work for this caveat. Hopefully.)
                 }
 
                 if (source.flags & TypeFlags.TypeParameter) {
@@ -6736,8 +6725,8 @@ namespace ts {
                 }
                 if (source.flags & TypeFlags.Union && target.flags & TypeFlags.Union ||
                     source.flags & TypeFlags.Intersection && target.flags & TypeFlags.Intersection) {
-                    if (result = eachTypeRelatedToSomeType(<UnionOrIntersectionType>source, <UnionOrIntersectionType>target, /*reportErrors*/ false)) {
-                        if (result &= eachTypeRelatedToSomeType(<UnionOrIntersectionType>target, <UnionOrIntersectionType>source, /*reportErrors*/ false)) {
+                    if (result = eachTypeRelatedToSomeType(<TypeOperatorType>source, <TypeOperatorType>target, /*reportErrors*/ false)) {
+                        if (result &= eachTypeRelatedToSomeType(<TypeOperatorType>target, <TypeOperatorType>source, /*reportErrors*/ false)) {
                             return result;
                         }
                     }
@@ -6760,7 +6749,7 @@ namespace ts {
                     }
                 }
                 else if (type.flags & TypeFlags.UnionOrIntersection) {
-                    for (const t of (<UnionOrIntersectionType>type).types) {
+                    for (const t of (<TypeOperatorType>type).types) {
                         if (isKnownProperty(t, name)) {
                             return true;
                         }
@@ -6797,7 +6786,7 @@ namespace ts {
                 return false;
             }
 
-            function eachTypeRelatedToSomeType(source: UnionOrIntersectionType, target: UnionOrIntersectionType, reportErrors: boolean): Ternary {
+            function eachTypeRelatedToSomeType(source: TypeOperatorType, target: TypeOperatorType, reportErrors: boolean): Ternary {
                 let result = Ternary.True;
                 const sourceTypes = source.types;
                 for (const sourceType of sourceTypes) {
@@ -6810,7 +6799,7 @@ namespace ts {
                 return result;
             }
 
-            function typeRelatedToSomeType(source: Type, target: UnionOrIntersectionType, reportErrors: boolean): Ternary {
+            function typeRelatedToSomeType(source: Type, target: TypeOperatorType, reportErrors: boolean): Ternary {
                 const targetTypes = target.types;
                 if (target.flags & TypeFlags.Union && containsType(targetTypes, source)) {
                     return Ternary.True;
@@ -6825,7 +6814,7 @@ namespace ts {
                 return Ternary.False;
             }
 
-            function typeRelatedToEachType(source: Type, target: UnionOrIntersectionType, reportErrors: boolean): Ternary {
+            function typeRelatedToEachType(source: Type, target: TypeOperatorType, reportErrors: boolean): Ternary {
                 let result = Ternary.True;
                 const targetTypes = target.types;
                 for (const targetType of targetTypes) {
@@ -6838,7 +6827,7 @@ namespace ts {
                 return result;
             }
 
-            function someTypeRelatedToType(source: UnionOrIntersectionType, target: Type, reportErrors: boolean): Ternary {
+            function someTypeRelatedToType(source: TypeOperatorType, target: Type, reportErrors: boolean): Ternary {
                 const sourceTypes = source.types;
                 if (source.flags & TypeFlags.Union && containsType(sourceTypes, target)) {
                     return Ternary.True;
@@ -6853,7 +6842,7 @@ namespace ts {
                 return Ternary.False;
             }
 
-            function eachTypeRelatedToType(source: UnionOrIntersectionType, target: Type, reportErrors: boolean): Ternary {
+            function eachTypeRelatedToType(source: TypeOperatorType, target: Type, reportErrors: boolean): Ternary {
                 let result = Ternary.True;
                 const sourceTypes = source.types;
                 for (const sourceType of sourceTypes) {
@@ -7789,10 +7778,10 @@ namespace ts {
             return !!(type.flags & TypeFlags.TypeParameter ||
                 type.flags & TypeFlags.Reference && forEach((<TypeReference>type).typeArguments, couldContainTypeParameters) ||
                 type.flags & TypeFlags.Anonymous && type.symbol && type.symbol.flags & (SymbolFlags.Method | SymbolFlags.TypeLiteral | SymbolFlags.Class) ||
-                type.flags & TypeFlags.UnionOrIntersection && couldUnionOrIntersectionContainTypeParameters(<UnionOrIntersectionType>type));
+                type.flags & TypeFlags.UnionOrIntersection && couldUnionOrIntersectionContainTypeParameters(<TypeOperatorType>type));
         }
 
-        function couldUnionOrIntersectionContainTypeParameters(type: UnionOrIntersectionType): boolean {
+        function couldUnionOrIntersectionContainTypeParameters(type: TypeOperatorType): boolean {
             if (type.couldContainTypeParameters === undefined) {
                 type.couldContainTypeParameters = forEach(type.types, couldContainTypeParameters);
             }
@@ -7800,7 +7789,7 @@ namespace ts {
         }
 
         function isTypeParameterAtTopLevel(type: Type, typeParameter: TypeParameter): boolean {
-            return type === typeParameter || type.flags & TypeFlags.UnionOrIntersection && forEach((<UnionOrIntersectionType>type).types, t => isTypeParameterAtTopLevel(t, typeParameter));
+            return type === typeParameter || type.flags & TypeFlags.UnionOrIntersection && forEach((<TypeOperatorType>type).types, t => isTypeParameterAtTopLevel(t, typeParameter));
         }
 
         function inferTypes(context: InferenceContext, originalSource: Type, originalTarget: Type) {
@@ -7830,7 +7819,7 @@ namespace ts {
                     // Source and target are both unions or both intersections. If source and target
                     // are the same type, just relate each constituent type to itself.
                     if (source === target) {
-                        for (const t of (<UnionOrIntersectionType>source).types) {
+                        for (const t of (<TypeOperatorType>source).types) {
                             inferFromTypes(t, t);
                         }
                         return;
@@ -7842,14 +7831,14 @@ namespace ts {
                     // and string literals because the number and string types are not represented as unions
                     // of all their possible values.
                     let matchingTypes: Type[];
-                    for (const t of (<UnionOrIntersectionType>source).types) {
-                        if (typeIdenticalToSomeType(t, (<UnionOrIntersectionType>target).types)) {
+                    for (const t of (<TypeOperatorType>source).types) {
+                        if (typeIdenticalToSomeType(t, (<TypeOperatorType>target).types)) {
                             (matchingTypes || (matchingTypes = [])).push(t);
                             inferFromTypes(t, t);
                         }
                         else if (t.flags & (TypeFlags.NumberLiteral | TypeFlags.StringLiteral)) {
                             const b = getBaseTypeOfLiteralType(t);
-                            if (typeIdenticalToSomeType(b, (<UnionOrIntersectionType>target).types)) {
+                            if (typeIdenticalToSomeType(b, (<TypeOperatorType>target).types)) {
                                 (matchingTypes || (matchingTypes = [])).push(t, b);
                             }
                         }
@@ -7858,8 +7847,8 @@ namespace ts {
                     // removing the identically matched constituents. For example, when inferring from
                     // 'string | string[]' to 'string | T' we reduce the types to 'string[]' and 'T'.
                     if (matchingTypes) {
-                        source = removeTypesFromUnionOrIntersection(<UnionOrIntersectionType>source, matchingTypes);
-                        target = removeTypesFromUnionOrIntersection(<UnionOrIntersectionType>target, matchingTypes);
+                        source = removeTypesFromUnionOrIntersection(<TypeOperatorType>source, matchingTypes);
+                        target = removeTypesFromUnionOrIntersection(<TypeOperatorType>target, matchingTypes);
                     }
                 }
                 if (target.flags & TypeFlags.TypeParameter) {
@@ -7906,7 +7895,7 @@ namespace ts {
                     }
                 }
                 else if (target.flags & TypeFlags.UnionOrIntersection) {
-                    const targetTypes = (<UnionOrIntersectionType>target).types;
+                    const targetTypes = (<TypeOperatorType>target).types;
                     let typeParameterCount = 0;
                     let typeParameter: TypeParameter;
                     // First infer to each type in union or intersection that isn't a type parameter
@@ -7930,7 +7919,7 @@ namespace ts {
                 }
                 else if (source.flags & TypeFlags.UnionOrIntersection) {
                     // Source is a union or intersection type, infer from each constituent type
-                    const sourceTypes = (<UnionOrIntersectionType>source).types;
+                    const sourceTypes = (<TypeOperatorType>source).types;
                     for (const sourceType of sourceTypes) {
                         inferFromTypes(sourceType, target);
                     }
@@ -8035,7 +8024,7 @@ namespace ts {
          * Return a new union or intersection type computed by removing a given set of types
          * from a given union or intersection type.
          */
-        function removeTypesFromUnionOrIntersection(type: UnionOrIntersectionType, typesToRemove: Type[]) {
+        function removeTypesFromUnionOrIntersection(type: TypeOperatorType, typesToRemove: Type[]) {
             const reducedTypes: Type[] = [];
             for (const t of type.types) {
                 if (!typeIdenticalToSomeType(t, typesToRemove)) {
@@ -8359,7 +8348,7 @@ namespace ts {
                 return getTypeFacts(constraint || emptyObjectType);
             }
             if (flags & TypeFlags.UnionOrIntersection) {
-                return getTypeFactsOfTypes((<UnionOrIntersectionType>type).types);
+                return getTypeFactsOfTypes((<TypeOperatorType>type).types);
             }
             return TypeFacts.All;
         }
@@ -10396,7 +10385,7 @@ namespace ts {
             checkGrammarObjectLiteralExpression(node, inDestructuringPattern);
 
             let propertiesTable = createMap<Symbol>();
-            let propertiesArray: Symbol[] = []; // this should really just be Object.values(propertiesTable)
+            let propertiesArray: Symbol[] = [];
             const spreads: SpreadElementType[] = [];
             const contextualType = getApparentTypeOfContextualType(node);
             const contextualTypeHasPattern = contextualType && contextualType.pattern &&
@@ -10469,11 +10458,8 @@ namespace ts {
                 }
                 else if (memberDecl.kind === SyntaxKind.SpreadElement) {
                     if (propertiesArray.length > 0) {
-                        const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
-                        const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
-                        // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                        const t = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo) as SpreadElementType;
-                        t.isOwn = true;
+                        const t = createObjectLiteralType(node, hasComputedStringProperty, hasComputedNumberProperty, propertiesArray, propertiesTable, typeFlags, patternWithComputedProperties, inDestructuringPattern) as SpreadElementType;
+                        t.isDeclaredProperty = true;
                         spreads.push(t);
                         propertiesArray = [];
                         propertiesTable = createMap<Symbol>();
@@ -10507,26 +10493,6 @@ namespace ts {
                 propertiesArray.push(member);
             }
 
-            if (spreads.length > 0) {
-                if (propertiesArray.length > 0) {
-                    const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
-                    const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
-                    // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                    const t = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo) as SpreadElementType;
-                    t.isOwn = true;
-                    spreads.push(t);
-                    propertiesArray = [];
-                    propertiesTable = createMap<Symbol>();
-                    hasComputedStringProperty = false;
-                    hasComputedNumberProperty = false;
-                }
-                // TODO: Probably still missing some info (eg contextual binding type) compared to the real creation code below
-                const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
-                const spread = getSpreadType(spreads, node.symbol);
-                spread.flags |= propagatedFlags;
-                return spread;
-            }
-
             // If object literal is contextually typed by the implied type of a binding pattern, augment the result
             // type with those properties for which the binding pattern specifies a default value.
             if (contextualTypeHasPattern) {
@@ -10542,6 +10508,22 @@ namespace ts {
                 }
             }
 
+            if (spreads.length > 0) {
+                if (propertiesArray.length > 0) {
+                    const t = createObjectLiteralType(node, hasComputedStringProperty, hasComputedNumberProperty, propertiesArray, propertiesTable, typeFlags, patternWithComputedProperties, inDestructuringPattern) as SpreadElementType;
+                    t.isDeclaredProperty = true;
+                    spreads.push(t);
+                }
+                const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
+                const spread = getSpreadType(spreads, node.symbol);
+                spread.flags |= propagatedFlags;
+                return spread;
+            }
+
+            return createObjectLiteralType(node, hasComputedStringProperty, hasComputedNumberProperty, propertiesArray, propertiesTable, typeFlags, patternWithComputedProperties, inDestructuringPattern);
+        }
+
+        function createObjectLiteralType(node: ObjectLiteralExpression, hasComputedStringProperty: boolean, hasComputedNumberProperty: boolean, propertiesArray: Symbol[], propertiesTable: Map<Symbol>, typeFlags: TypeFlags, patternWithComputedProperties: boolean, inDestructuringPattern: boolean) {
             const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
             const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
             const result = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
@@ -10790,7 +10772,7 @@ namespace ts {
                 elemType = checkExpression(node.tagName);
             }
             if (elemType.flags & TypeFlags.Union) {
-                const types = (<UnionOrIntersectionType>elemType).types;
+                const types = (<TypeOperatorType>elemType).types;
                 return getUnionType(types.map(type => {
                     return getResolvedJsxType(node, type, elemClassType);
                 }), /*subtypeReduction*/ true);
@@ -13352,7 +13334,7 @@ namespace ts {
                 return true;
             }
             if (type.flags & TypeFlags.UnionOrIntersection) {
-                const types = (<UnionOrIntersectionType>type).types;
+                const types = (<TypeOperatorType>type).types;
                 for (const t of types) {
                     if (maybeTypeOfKind(t, kind)) {
                         return true;
@@ -13370,7 +13352,7 @@ namespace ts {
                 return true;
             }
             if (type.flags & TypeFlags.Union) {
-                const types = (<UnionOrIntersectionType>type).types;
+                const types = (<TypeOperatorType>type).types;
                 for (const t of types) {
                     if (!isTypeOfKind(t, kind)) {
                         return false;
@@ -13379,7 +13361,7 @@ namespace ts {
                 return true;
             }
             if (type.flags & TypeFlags.Intersection) {
-                const types = (<UnionOrIntersectionType>type).types;
+                const types = (<TypeOperatorType>type).types;
                 for (const t of types) {
                     if (isTypeOfKind(t, kind)) {
                         return true;
