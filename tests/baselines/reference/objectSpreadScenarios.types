@@ -73,9 +73,9 @@ let b1: B1 = { b: 101 };
 >101 : 101
 
 a1 = override(a1, { a: false });
->a1 = override(a1, { a: false }) : { ...A1; ...A1 }
+>a1 = override(a1, { a: false }) : { a: boolean; }
 >a1 : A1
->override(a1, { a: false }) : { ...A1; ...A1 }
+>override(a1, { a: false }) : { a: boolean; }
 >override : <U>(initial: U, override: U) => { ...U; ...U }
 >a1 : A1
 >{ a: false } : { a: false; }
@@ -99,8 +99,8 @@ host.update({ a: false });
 >false : false
 
 let mixed = mixin(a1, b1);
->mixed : { ...A1; ...B1 }
->mixin(a1, b1) : { ...A1; ...B1 }
+>mixed : { b: number; a: boolean; }
+>mixin(a1, b1) : { b: number; a: boolean; }
 >mixin : <T, U>(one: T, two: U) => { ...T; ...U }
 >a1 : A1
 >b1 : B1
