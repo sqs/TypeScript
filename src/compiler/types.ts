@@ -2530,13 +2530,11 @@ namespace ts {
     export interface IntersectionType extends TypeOperatorType { }
 
     /* @internal */
-    export interface SpreadType extends TypeOperatorType {
-        types: SpreadElementType[];       // Constituent types
-    }
-
-    /* @internal */
-    export interface SpreadElementType extends ResolvedType {
-        isFromObjectLiteral?: boolean;
+    export interface SpreadType extends Type {
+        left: Type;
+        isLeftFromObjectLiteral?: boolean;
+        right: Type;
+        isRightFromObjectLiteral?: boolean;
     }
 
     /* @internal */
