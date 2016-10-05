@@ -2301,27 +2301,20 @@ namespace ts {
                 }
 
                 function writeSpreadType(type: SpreadType, flags: TypeFormatFlags) {
+                    // TODO: Refactor this to be less ugly!
                     writePunctuation(writer, SyntaxKind.OpenBraceToken);
                     writer.writeLine();
                     writer.increaseIndent();
-                    // if (type.left.flags & TypeFlags.Spread) {
-                        // TODO: This is not going to work either, since the rhs needs to know if it's going to actually be the last item or not.
-                        // writeSpreadCore(type.left);
-                    // }
-                    // else if (type.isLeftFromObjectLiteral) {
-                        // TODO: This branch is always taken over the else, I think, because left is always an object type and should therefore always be flattened.
-                        // TODO: Remove the else branch, and isLeftFromObjectLiteral.
-                        //const saveInObjectTypeLiteral = inObjectTypeLiteral;
-                        //inObjectTypeLiteral = true;
-                        //writeObjectLiteralType(resolveStructuredTypeMembers(type.left));
-                        //inObjectTypeLiteral = saveInObjectTypeLiteral;
-                    //}
-                    // else {
-                        writePunctuation(writer, SyntaxKind.DotDotDotToken);
-                        writeType(type.left, TypeFormatFlags.None);
-                        writePunctuation(writer, SyntaxKind.SemicolonToken);
-                        writer.writeLine();
-                    // }
+                    if (type.left.flags & TypeFlags.Spread) {
+                        writeSpreadTypeWorker(type.left as SpreadType);
+                    }
+                    else {
+                        const saveInObjectTypeLiteral = inObjectTypeLiteral;
+                        inObjectTypeLiteral = true;
+                        writeObjectLiteralType(resolveStructuredTypeMembers(type.left));
+                        inObjectTypeLiteral = saveInObjectTypeLiteral;
+                    }
+
                     if (type.isRightFromObjectLiteral) {
                         const saveInObjectTypeLiteral = inObjectTypeLiteral;
                         inObjectTypeLiteral = true;
@@ -2335,6 +2328,30 @@ namespace ts {
                     }
                     writer.decreaseIndent();
                     writePunctuation(writer, SyntaxKind.CloseBraceToken);
+                }
+
+                function writeSpreadTypeWorker(type: SpreadType): void {
+                    if (type.left.flags & TypeFlags.Spread) {
+                        writeSpreadTypeWorker(type.left as SpreadType);
+                    }
+                    else {
+                        const saveInObjectTypeLiteral = inObjectTypeLiteral;
+                        inObjectTypeLiteral = true;
+                        writeObjectLiteralType(resolveStructuredTypeMembers(type.left));
+                        inObjectTypeLiteral = saveInObjectTypeLiteral;
+                    }
+                    if (type.isRightFromObjectLiteral) {
+                        const saveInObjectTypeLiteral = inObjectTypeLiteral;
+                        inObjectTypeLiteral = true;
+                        writeObjectLiteralType(resolveStructuredTypeMembers(type.right));
+                        inObjectTypeLiteral = saveInObjectTypeLiteral;
+                    }
+                    else {
+                        writePunctuation(writer, SyntaxKind.DotDotDotToken);
+                        writeType(type.right, TypeFormatFlags.None);
+                        writePunctuation(writer, SyntaxKind.SemicolonToken);
+                        writer.writeLine();
+                    }
                 }
 
                 function writeAnonymousType(type: ObjectType, flags: TypeFormatFlags) {
@@ -5817,6 +5834,7 @@ namespace ts {
 
         function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[], membersAreObjectLiterals?: boolean[]): Type {
             // TODO: I'm pretty sure I don't need the boolean[], and can figure it out by checking TypeFlags
+            // TODO: Skip repeated type parameters
             if (types.length === 0) {
                 return emptyObjectType;
             }
@@ -5825,6 +5843,7 @@ namespace ts {
                 return spreadTypes[id];
             }
             const right = types.pop();
+            const atBeginning = types.length === 0;
             const isRightObjectLiteral = membersAreObjectLiterals && membersAreObjectLiterals.pop();
             const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
             if (right.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
@@ -5834,12 +5853,13 @@ namespace ts {
                 && !(left.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter))) {
                 const memberProperties = createMap<Symbol[]>();
                 const members = createMap<Symbol>();
-                const stringIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(symbol, IndexKind.String),
-                                                                   unionIndexInfos(getIndexInfoOfType(left, IndexKind.String),
-                                                                                   getIndexInfoOfType(right, IndexKind.String)));
-                const numberIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(symbol, IndexKind.Number),
-                                                                   unionIndexInfos(getIndexInfoOfType(left, IndexKind.Number),
-                                                                                   getIndexInfoOfType(right, IndexKind.Number)));
+                let stringIndexInfo = unionIndexInfos(getIndexInfoOfType(left, IndexKind.String), getIndexInfoOfType(right, IndexKind.String));
+                let numberIndexInfo = unionIndexInfos(getIndexInfoOfType(left, IndexKind.Number), getIndexInfoOfType(right, IndexKind.Number));
+                if (atBeginning) {
+                    // only get index info from the entire type once per spread type
+                    stringIndexInfo = unionIndexInfos(stringIndexInfo, getIndexInfoOfSymbol(symbol, IndexKind.String));
+                    numberIndexInfo = unionIndexInfos(numberIndexInfo, getIndexInfoOfSymbol(symbol, IndexKind.Number));
+                }
                 for (const prop of getPropertiesOfType(right)) {
                     addSpreadProperty(prop, memberProperties, !isRightObjectLiteral);
                 }
@@ -6953,9 +6973,8 @@ namespace ts {
                 // source/target: Object | Spread
                 // right: TypeParameter | Object
                 // left: Object | Spread
-                if (trg.right.flags & TypeFlags.TypeParameter && src.right.flags & TypeFlags.TypeParameter
-                    && trg.right.symbol === src.right.symbol) {
-                    return spreadTypeRelatedTo(src.left, trg.left);
+                if (trg.right.flags & TypeFlags.TypeParameter && src.right.flags & TypeFlags.TypeParameter) {
+                    return trg.right.symbol === src.right.symbol && spreadTypeRelatedTo(src.left, trg.left);
                 }
                 return spreadTypeRelatedTo(src.right.flags & TypeFlags.ObjectType ? src.left : src,
                                             trg.right.flags & TypeFlags.ObjectType ? trg.left : trg);
