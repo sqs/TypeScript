@@ -4448,14 +4448,6 @@ namespace ts {
             }
         }
 
-        function getPropertiesOfSpreadType(type: SpreadType): Symbol[] {
-            // this might be infinitely recursive! I hope not!
-            // TODO: For now I'm going to use getPropertiesOfObjectType to be on the safe side, but this will fail
-            //       for spreads with type parameters with union/intersection constraints
-            //       Once getSpreadType distributes unions and intersections correctly, it should be safe to switch it back
-            return getPropertiesOfObjectType(getSpreadType([getApparentType(type.left), getApparentType(type.right)], type.symbol));
-        }
-
         function getPropertiesOfUnionOrIntersectionType(type: TypeOperatorType): Symbol[] {
             for (const current of type.types) {
                 for (const prop of getPropertiesOfType(current)) {
@@ -4487,9 +4479,6 @@ namespace ts {
             if (type.flags & TypeFlags.UnionOrIntersection) {
                 return getPropertiesOfUnionOrIntersectionType(<UnionType>type);
             }
-            else if (type.flags & TypeFlags.Spread) {
-                return getPropertiesOfSpreadType(<SpreadType>type);
-            }
             return getPropertiesOfObjectType(type);
         }
 
@@ -4508,6 +4497,10 @@ namespace ts {
             return type.resolvedApparentType;
         }
 
+        function getApparentTypeOfSpread(type: SpreadType) {
+            return getSpreadType([getApparentType(type.left), getApparentType(type.right)], type.symbol, undefined, undefined, [true, true]);
+        }
+
         /**
          * For a type parameter, return the base constraint of the type parameter. For the string, number,
          * boolean, and symbol primitive types, return the corresponding object types. Otherwise return the
@@ -4516,7 +4509,10 @@ namespace ts {
         function getApparentType(type: Type): Type {
             if (type.flags & TypeFlags.TypeParameter) {
                 type = getApparentTypeOfTypeParameter(<TypeParameter>type);
-          }
+            }
+            if (type.flags & TypeFlags.Spread) {
+                type = getApparentTypeOfSpread(type as SpreadType);
+            }
             if (type.flags & TypeFlags.StringLike) {
                 type = globalStringType;
             }
@@ -4622,68 +4618,6 @@ namespace ts {
             }
             return property;
         }
-
-        // TODO: I don't think this is needed anymore, but getPropertyOfSpreadType(type, name)
-        // *might* need to become ` = getPropertiesOfSpreadType(type)[name]`.
-        // If I get the assignability code complete, it probably won't be needed, though,
-        // because I think that objectTypeRelatedTo is the only place this is called,
-        // and it shouldn't be called on Spread types anymore, since they will always have a type parameter, and those rules are separate,
-        // and will *delegate* to isRelatedTo themselves, which will eventually call objectTypeRelatedTo.
-        //
-        //function createSpreadProperty(containingType: SpreadType, name: string): Symbol {
-            //const types = containingType.types;
-            //return createUnionOrIntersectionOrSpreadPropertySymbol(containingType, name, () => {
-                //let props: Symbol[];
-                //// Result is readonly if any source is readonly
-                //let isReadonly = false;
-                //// Result is optional if all sources are optional
-                //let commonFlags = SymbolFlags.Optional;
-                //for (let i = types.length - 1; i > -1; i--) {
-                    //const type = getApparentType(types[i]);
-                    //if (type !== unknownType) {
-                        //const prop = getPropertyOfType(type, name);
-                        //if (prop) {
-                            //if (prop.flags & SymbolFlags.Method && !types[i].isFromObjectLiteral ||
-                                //prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor)) {
-                                //// skip non-object-literal methods and set-only properties and keep looking
-                                //continue;
-                            //}
-                            //if (!props) {
-                                //props = [prop];
-                            //}
-                            //else if (!contains(props, prop)) {
-                                //props.unshift(prop);
-                            //}
-                            //if (isReadonlySymbol(prop)) {
-                                //isReadonly = true;
-                            //}
-                            //if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
-                                //// return immediately because even if prop is optional, it would make the unioned spread property private
-                                //return [undefined, false, false, 0];
-                            //}
-                            //if (!(prop.flags & SymbolFlags.Optional)) {
-                                //// Reset extraFlags to None since we found a non-optional property
-                                //commonFlags = SymbolFlags.None;
-                                //break;
-                            //}
-                        //}
-                    //}
-                //}
-                //return [props, isReadonly, /*isPartial*/ false, commonFlags];
-            //});
-        //}
-
-        //function getPropertyOfSpreadType(type: TypeOperatorType, name: string): Symbol {
-            //const properties = type.resolvedProperties || (type.resolvedProperties = createMap<Symbol>());
-            //let property = properties[name];
-            //if (!property) {
-                //property = createSpreadProperty(type as SpreadType, name);
-                //if (property) {
-                    //properties[name] = property;
-                //}
-            //}
-            //return property;
-        //}
 
         function getPropertyOfUnionOrIntersectionType(type: TypeOperatorType, name: string): Symbol {
             const property = getUnionOrIntersectionProperty(type, name);
