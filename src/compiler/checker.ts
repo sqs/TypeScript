@@ -5834,23 +5834,42 @@ namespace ts {
 
         function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[], membersAreObjectLiterals?: boolean[]): Type {
             // TODO: I'm pretty sure I don't need the boolean[], and can figure it out by checking TypeFlags
-            // TODO: Skip repeated type parameters
             if (types.length === 0) {
                 return emptyObjectType;
             }
+            Debug.assert(types.length === membersAreObjectLiterals.length);
             const id = getTypeListId(types);
             if (id in spreadTypes) {
                 return spreadTypes[id];
             }
             const right = types.pop();
-            const atBeginning = types.length === 0;
             const isRightObjectLiteral = membersAreObjectLiterals && membersAreObjectLiterals.pop();
+            if (right.flags & TypeFlags.Spread) {
+                // spread is right associative and associativity applies, so transform
+                // (T ... U) ... V to T ... (U ... V)
+                const rspread = right as SpreadType;
+                if (rspread.left !== emptyObjectType) {
+                    types.push(rspread.left);
+                    membersAreObjectLiterals.push(true);
+                }
+                types.push(rspread.right);
+                membersAreObjectLiterals.push(true); // TODO: This is probably not right
+                return getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
+            }
+            const atBeginning = types.length === 0;
             const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
             if (right.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
                 return left;
             }
-            if (!(right.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter))
-                && !(left.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter))) {
+            if (right.flags & TypeFlags.TypeParameter &&
+                left.flags & TypeFlags.Spread &&
+                (left as SpreadType).right.flags & TypeFlags.TypeParameter &&
+                right.symbol === (left as SpreadType).right.symbol) {
+                // for types like T ... T, just return ... T
+                return left;
+            }
+            if (!(right.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter | TypeFlags.Spread))
+                && !(left.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter | TypeFlags.Spread))) {
                 const memberProperties = createMap<Symbol[]>();
                 const members = createMap<Symbol>();
                 let stringIndexInfo = unionIndexInfos(getIndexInfoOfType(left, IndexKind.String), getIndexInfoOfType(right, IndexKind.String));
@@ -6890,7 +6909,7 @@ namespace ts {
                     // this part should be COMPLETELY different now
                     // you only see this for spreads with type parameters (TODO: and unions/intersections)
                     if (target.flags & TypeFlags.Spread) {
-                        if (!(spreadTypeRelatedTo(source, target))) {
+                        if (!(spreadTypeRelatedTo(source as SpreadType, target as SpreadType))) {
                             reportRelationError(headMessage, source, target);
                             return Ternary.False;
                         }
@@ -6904,6 +6923,13 @@ namespace ts {
                 }
 
                 if (source.flags & TypeFlags.TypeParameter) {
+                    if (target.flags & TypeFlags.Spread) {
+                        // T is assignable to ...T
+                        if (source.symbol === (target as SpreadType).right.symbol
+                            && (target as SpreadType).left === emptyObjectType) {
+                            return Ternary.True;
+                        }
+                    }
                     let constraint = getConstraintOfTypeParameter(<TypeParameter>source);
 
                     if (!constraint || constraint.flags & TypeFlags.Any) {
@@ -6955,29 +6981,41 @@ namespace ts {
                 return Ternary.False;
             }
 
-            function spreadTypeRelatedTo(source: Type, target: Type): boolean {
-                if (source.flags & TypeFlags.ObjectType && target.flags & TypeFlags.ObjectType) {
-                    return true;
+            function spreadTypeRelatedTo(source: SpreadType, target: SpreadType): boolean {
+                // (Spread ... Object) | (Spread | Object ... TypeParameter)
+                // in other words, if the right side is Object, then the left side must be a Spread.
+                if (source.right.flags & TypeFlags.ObjectType &&
+                    target.right.flags & TypeFlags.ObjectType) {
+                    return spreadTypeRelatedTo(source.left as SpreadType, target.left as SpreadType);
                 }
-                // if one is object and other spread, then make sure that the spread has no type parameters
-                if (target.flags & TypeFlags.ObjectType) {
-                    return ((source as SpreadType).right.flags & TypeFlags.ObjectType) &&
-                        spreadTypeRelatedTo((source as SpreadType).left, target);
+                if (source.right.flags & TypeFlags.ObjectType) {
+                    /// target.right is TypeParameter, skip source.right, but keep looking at target
+                    return spreadTypeRelatedTo(source.left as SpreadType, target);
                 }
-                if (source.flags & TypeFlags.ObjectType) {
-                    return (target as SpreadType).right.flags & TypeFlags.ObjectType &&
-                        spreadTypeRelatedTo(source, (target as SpreadType).left);
+                if (target.right.flags & TypeFlags.ObjectType) {
+                    /// source.right is TypeParameter, skip target.right, but keep looking at source
+                    return spreadTypeRelatedTo(source, target.left as SpreadType);
                 }
-                const src = source as SpreadType;
-                const trg = target as SpreadType;
-                // source/target: Object | Spread
-                // right: TypeParameter | Object
-                // left: Object | Spread
-                if (trg.right.flags & TypeFlags.TypeParameter && src.right.flags & TypeFlags.TypeParameter) {
-                    return trg.right.symbol === src.right.symbol && spreadTypeRelatedTo(src.left, trg.left);
+                else {
+                    // both rights are type parameters, so they must be identical
+                    // and both lefts must be the same:
+                    // if one left is object and the other is spread, that means the second has another type parameter. which isn't allowed
+                    if (target.right.symbol !== source.right.symbol) {
+                        return false;
+                    }
+                    if (source.left.flags & TypeFlags.Spread && target.left.flags & TypeFlags.Spread) {
+                        return spreadTypeRelatedTo(source.left as SpreadType, target.left as SpreadType);
+                    }
+                    else if (source.left.flags & TypeFlags.ObjectType && target.left.flags & TypeFlags.ObjectType) {
+                        return true; // let structural compatibility figure it out later
+                    }
+                    else {
+                        // one side is a spread, so it must have more type parameters, which will not be matched by the other side
+                        // return false immediately instead of descending to find this out.
+                        return false;
+                    }
                 }
-                return spreadTypeRelatedTo(src.right.flags & TypeFlags.ObjectType ? src.left : src,
-                                            trg.right.flags & TypeFlags.ObjectType ? trg.left : trg);
+
             }
 
             function isIdenticalTo(source: Type, target: Type): Ternary {
