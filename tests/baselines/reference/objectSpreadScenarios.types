@@ -22,24 +22,24 @@ function override<U>(initial: U, override: U): { ...U, ...U } {
 >initial : any
 >override : any
 }
-function update<U>(this: { u: U }, override: U): void {
->update : <U>(this: { u: U; }, override: U) => void
+function update<U>(this: { u: { ...U } }, override: U): void {
+>update : <U>(this: { u: { ...U }; }, override: U) => void
 >U : U
->this : { u: U; }
->u : U
+>this : { u: { ...U }; }
+>u : { ...U }
 >U : U
 >override : U
 >U : U
 
     this.u = { ...this.u, ...override };
->this.u = { ...this.u, ...override } : { ...U; ...U }
->this.u : U
->this : { u: U; }
->u : U
->{ ...this.u, ...override } : { ...U; ...U }
->this.u : U
->this : { u: U; }
->u : U
+>this.u = { ...this.u, ...override } : { ...U }
+>this.u : { ...U }
+>this : { u: { ...U }; }
+>u : { ...U }
+>{ ...this.u, ...override } : { ...U }
+>this.u : { ...U }
+>this : { u: { ...U }; }
+>u : { ...U }
 >override : any
 }
 function mixin<T, U>(one: T, two: U): { ...T, ...U } {
@@ -83,17 +83,17 @@ a1 = override(a1, { a: false });
 >false : false
 
 let host = { u: a1, update };
->host : { u: A1; update: <U>(this: { u: U; }, override: U) => void; }
->{ u: a1, update } : { u: A1; update: <U>(this: { u: U; }, override: U) => void; }
+>host : { u: A1; update: <U>(this: { u: { ...U }; }, override: U) => void; }
+>{ u: a1, update } : { u: A1; update: <U>(this: { u: { ...U }; }, override: U) => void; }
 >u : A1
 >a1 : A1
->update : <U>(this: { u: U; }, override: U) => void
+>update : <U>(this: { u: { ...U }; }, override: U) => void
 
 host.update({ a: false });
 >host.update({ a: false }) : void
->host.update : <U>(this: { u: U; }, override: U) => void
->host : { u: A1; update: <U>(this: { u: U; }, override: U) => void; }
->update : <U>(this: { u: U; }, override: U) => void
+>host.update : <U>(this: { u: { ...U }; }, override: U) => void
+>host : { u: A1; update: <U>(this: { u: { ...U }; }, override: U) => void; }
+>update : <U>(this: { u: { ...U }; }, override: U) => void
 >{ a: false } : { a: false; }
 >a : boolean
 >false : false
