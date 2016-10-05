@@ -14,7 +14,7 @@ tests/cases/conformance/types/spread/objectSpreadNegative.ts(42,9): error TS2339
 tests/cases/conformance/types/spread/objectSpreadNegative.ts(45,1): error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ x: number; }' has no compatible call signatures.
 tests/cases/conformance/types/spread/objectSpreadNegative.ts(46,1): error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
 tests/cases/conformance/types/spread/objectSpreadNegative.ts(48,39): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS2322: Type '{ ...U; ...U }' is not assignable to type 'U'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS2322: Type '{ ...U }' is not assignable to type 'U'.
 
 
 ==== tests/cases/conformance/types/spread/objectSpreadNegative.ts (14 errors) ====
@@ -100,6 +100,6 @@ tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS232
     function override<U>(initial: U, override: U): U {
         return { ...initial, ...override };
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!!! error TS2322: Type '{ ...U; ...U }' is not assignable to type 'U'.
+!!! error TS2322: Type '{ ...U }' is not assignable to type 'U'.
     }
     

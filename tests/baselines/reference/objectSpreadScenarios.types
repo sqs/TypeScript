@@ -8,7 +8,7 @@ interface B1 { b: number };
 >b : number
 
 function override<U>(initial: U, override: U): { ...U, ...U } {
->override : <U>(initial: U, override: U) => { ...U; ...U }
+>override : <U>(initial: U, override: U) => { ...U }
 >U : U
 >initial : U
 >U : U
@@ -18,7 +18,7 @@ function override<U>(initial: U, override: U): { ...U, ...U } {
 >U : U
 
     return { ...initial, ...override };
->{ ...initial, ...override } : { ...U; ...U }
+>{ ...initial, ...override } : { ...U }
 >initial : any
 >override : any
 }
@@ -76,7 +76,7 @@ a1 = override(a1, { a: false });
 >a1 = override(a1, { a: false }) : { a: boolean; }
 >a1 : A1
 >override(a1, { a: false }) : { a: boolean; }
->override : <U>(initial: U, override: U) => { ...U; ...U }
+>override : <U>(initial: U, override: U) => { ...U }
 >a1 : A1
 >{ a: false } : { a: false; }
 >a : boolean
