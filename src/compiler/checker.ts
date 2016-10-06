@@ -2305,15 +2305,15 @@ namespace ts {
                     writer.writeLine();
                     writer.increaseIndent();
 
-                    writeSpreadTypeWorker(type, /*initial*/true);
+                    writeSpreadTypeWorker(type, /*atEnd*/true, type.symbol);
 
                     writer.decreaseIndent();
                     writePunctuation(writer, SyntaxKind.CloseBraceToken);
                 }
 
-                function writeSpreadTypeWorker(type: SpreadType, initial: boolean): void {
+                function writeSpreadTypeWorker(type: SpreadType, atEnd: boolean, container: Symbol): void {
                     if (type.left.flags & TypeFlags.Spread) {
-                        writeSpreadTypeWorker(type.left as SpreadType, /*initial*/false);
+                        writeSpreadTypeWorker(type.left as SpreadType, /*atEnd*/false, container);
                     }
                     else {
                         const saveInObjectTypeLiteral = inObjectTypeLiteral;
@@ -2321,7 +2321,7 @@ namespace ts {
                         writeObjectLiteralType(resolveStructuredTypeMembers(type.left));
                         inObjectTypeLiteral = saveInObjectTypeLiteral;
                     }
-                    if (type.isRightFromObjectLiteral) {
+                    if (type.right.symbol === container) {
                         const saveInObjectTypeLiteral = inObjectTypeLiteral;
                         inObjectTypeLiteral = true;
                         writeObjectLiteralType(resolveStructuredTypeMembers(type.right));
@@ -2330,7 +2330,7 @@ namespace ts {
                     else {
                         writePunctuation(writer, SyntaxKind.DotDotDotToken);
                         writeType(type.right, TypeFormatFlags.None);
-                        if (initial) {
+                        if (atEnd) {
                             writeSpace(writer);
                         }
                         else {
@@ -5721,7 +5721,6 @@ namespace ts {
                 return spreadTypes[id];
             }
             const right = types.pop();
-            const isRightObjectLiteral = right.symbol === symbol;
             if (right.flags & TypeFlags.Spread) {
                 // spread is right associative and associativity applies, so transform
                 // (T ... U) ... V to T ... (U ... V)
@@ -5801,8 +5800,6 @@ namespace ts {
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
             spread.left = left;
             spread.right = right;
-            // TODO: This property should be removed, and use the same predicate in writeSpreadType as here
-            spread.isRightFromObjectLiteral = isRightObjectLiteral;
             spread.aliasSymbol = aliasSymbol;
             spread.aliasTypeArguments = aliasTypeArguments;
             return spread;

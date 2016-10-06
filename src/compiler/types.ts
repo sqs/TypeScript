@@ -2542,9 +2542,7 @@ namespace ts {
     export interface SpreadType extends Type {
         // TODO: left and right's type can be restricted to a couple of types only (SpreadType | ObjectType) and (ObjectType | TypeParameter)
         left: Type;
-        isLeftFromObjectLiteral?: boolean;
         right: Type;
-        isRightFromObjectLiteral?: boolean;
     }
 
     /* @internal */
