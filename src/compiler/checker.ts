@@ -3510,6 +3510,9 @@ namespace ts {
             if (symbol.flags & SymbolFlags.Instantiated) {
                 return getTypeOfInstantiatedSymbol(symbol);
             }
+            if (symbol.flags & SymbolFlags.SyntheticProperty && symbol.syntheticKind === SyntheticSymbolKind.Spread) {
+                return getTypeOfSpreadProperty(symbol);
+            }
             if (symbol.flags & (SymbolFlags.Variable | SymbolFlags.Property)) {
                 return getTypeOfVariableOrParameterOrProperty(symbol);
             }
@@ -3526,6 +3529,15 @@ namespace ts {
                 return getTypeOfAlias(symbol);
             }
             return unknownType;
+        }
+
+        function getTypeOfSpreadProperty(symbol: Symbol) {
+            const links = getSymbolLinks(symbol);
+            if (!links.type) {
+                links.type = getUnionType([getTypeOfSymbol(links.leftSpread), getTypeOfSymbol(links.rightSpread)]);
+            }
+            return links.type;
+
         }
 
         function getTargetType(type: ObjectType): Type {
@@ -5778,15 +5790,13 @@ namespace ts {
                             const flags = SymbolFlags.Property | SymbolFlags.Transient | SymbolFlags.SyntheticProperty | (leftProp.flags & SymbolFlags.Optional);
                             const result = <TransientSymbol>createSymbol(flags, leftProp.name);
                             result.syntheticKind = SyntheticSymbolKind.Spread;
-                            result.leftSpread = left;
-                            result.rightSpread = right;
+                            result.leftSpread = leftProp;
+                            result.rightSpread = rightProp;
                             result.declarations = declarations;
                             if (declarations.length) {
                                 result.valueDeclaration = declarations[0];
                             }
                             result.isReadonly = isReadonlySymbol(rightProp) || isReadonlySymbol(leftProp);
-                            // TODO: Delay this until a synthetic spread property is seen inside getTypeOfSymbol
-                            result.type = getUnionType([getTypeOfSymbol(rightProp), getTypeOfSymbol(leftProp)]);
                             members[leftProp.name] = result;
                         }
                     }
@@ -18911,7 +18921,7 @@ namespace ts {
                 if (symbol.syntheticKind === SyntheticSymbolKind.Spread) {
                     const name = symbol.name;
                     const links = getSymbolLinks(symbol);
-                    return [getPropertyOfType(links.leftSpread, name), getPropertyOfType(links.rightSpread, name)];
+                    return [links.leftSpread, links.rightSpread];
                 }
                 else {
                     const symbols: Symbol[] = [];

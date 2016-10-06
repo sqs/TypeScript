@@ -2307,8 +2307,8 @@ namespace ts {
         mapper?: TypeMapper;                // Type mapper for instantiation alias
         referenced?: boolean;               // True if alias symbol has been referenced as a value
         containingType?: TypeOperatorType;  // Containing union or intersection type for synthetic property
-        leftSpread?: Type;                  // Left source for synthetic spread property
-        rightSpread?: Type;                 // Right source for synthetic spread property
+        leftSpread?: Symbol;                // Left source for synthetic spread property
+        rightSpread?: Symbol;               // Right source for synthetic spread property
         hasNonUniformType?: boolean;        // True if constituents have non-uniform types
         isPartial?: boolean;                // True if syntheric property of union type occurs in some but not all constituents
         isDiscriminantProperty?: boolean;   // True if discriminant synthetic property
