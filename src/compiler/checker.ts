@@ -4499,7 +4499,7 @@ namespace ts {
         }
 
         function getApparentTypeOfSpread(type: SpreadType) {
-            return getSpreadType([getApparentType(type.left), getApparentType(type.right)], type.symbol, undefined, undefined, [true, true]);
+            return getSpreadType([getApparentType(type.left), getApparentType(type.right)], type.symbol, undefined, undefined);
         }
 
         /**
@@ -5704,17 +5704,13 @@ namespace ts {
                 let type: ObjectType;
                 if (isSpread) {
                     let members: Map<Symbol>;
-                    const membersAreObjectLiterals: boolean[] = [];
                     const spreads: Type[] = [];
                     for (const member of (node as TypeLiteralNode).members) {
                         if (member.kind === SyntaxKind.SpreadTypeElement) {
                             if (members) {
-                                const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined);
-                                membersAreObjectLiterals.push(true);
-                                spreads.push(t);
+                                spreads.push(createAnonymousType(node.symbol, members, emptyArray, emptyArray, undefined, undefined));
                                 members = undefined;
                             }
-                            membersAreObjectLiterals.push(false);
                             spreads.push(getTypeFromTypeNode((member as SpreadTypeElement).type));
                         }
                         else if (member.kind !== SyntaxKind.CallSignature &&
@@ -5734,11 +5730,9 @@ namespace ts {
                         }
                     }
                     if (members) {
-                        const t = createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined);
-                        membersAreObjectLiterals.push(true);
-                        spreads.push(t);
+                        spreads.push(createAnonymousType(node.symbol, members, emptyArray, emptyArray, undefined, undefined));
                     }
-                    return getSpreadType(spreads, node.symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
+                    return getSpreadType(spreads, node.symbol, aliasSymbol, aliasTypeArguments);
                 }
                 else {
                     type = createObjectType(TypeFlags.Anonymous, node.symbol);
@@ -5765,34 +5759,31 @@ namespace ts {
             }
          }
 
-        function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[], membersAreObjectLiterals?: boolean[]): Type {
+        function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
             // TODO: I'm pretty sure I don't need the boolean[], and can figure it out by checking TypeFlags
             //    ... no, just make sure that the anonymous types created to hold object-literal properties set their symbol to the symbol parameter
             //        then isObjectLiteralMember = (symbol === left.symbol)
             if (types.length === 0) {
                 return emptyObjectType;
             }
-            Debug.assert(types.length === membersAreObjectLiterals.length);
             const id = getTypeListId(types);
             if (id in spreadTypes) {
                 return spreadTypes[id];
             }
             const right = types.pop();
-            const isRightObjectLiteral = membersAreObjectLiterals && membersAreObjectLiterals.pop();
+            const isRightObjectLiteral = right.symbol === symbol;
             if (right.flags & TypeFlags.Spread) {
                 // spread is right associative and associativity applies, so transform
                 // (T ... U) ... V to T ... (U ... V)
                 const rspread = right as SpreadType;
                 if (rspread.left !== emptyObjectType) {
                     types.push(rspread.left);
-                    membersAreObjectLiterals.push(true);
                 }
                 types.push(rspread.right);
-                membersAreObjectLiterals.push(true); // TODO: This is probably not right
-                return getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
+                return getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
             }
             const atBeginning = types.length === 0;
-            const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments, membersAreObjectLiterals);
+            const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
             if (right.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
                 return left;
             }
@@ -6295,7 +6286,7 @@ namespace ts {
                 }
                 if (type.flags & TypeFlags.Spread) {
                     const spread = type as SpreadType;
-                    return getSpreadType([instantiateType(spread.left, mapper), instantiateType(spread.right, mapper)], type.symbol, type.aliasSymbol, mapper.targetTypes, [spread.isLeftFromObjectLiteral, spread.isRightFromObjectLiteral]);
+                    return getSpreadType([instantiateType(spread.left, mapper), instantiateType(spread.right, mapper)], type.symbol, type.aliasSymbol, mapper.targetTypes);
                 }
             }
             return type;
@@ -10623,7 +10614,6 @@ namespace ts {
             let propertiesTable = createMap<Symbol>();
             let propertiesArray: Symbol[] = [];
             const spreads: Type[] = [];
-            const membersAreObjectLiterals: boolean[] = [];
             const contextualType = getApparentTypeOfContextualType(node);
             const contextualTypeHasPattern = contextualType && contextualType.pattern &&
                 (contextualType.pattern.kind === SyntaxKind.ObjectBindingPattern || contextualType.pattern.kind === SyntaxKind.ObjectLiteralExpression);
@@ -10695,16 +10685,13 @@ namespace ts {
                 }
                 else if (memberDecl.kind === SyntaxKind.SpreadElementExpression) {
                     if (propertiesArray.length > 0) {
-                        const t = createObjectLiteralType();
-                        spreads.push(t);
-                        membersAreObjectLiterals.push(true);
+                        spreads.push(createObjectLiteralType());
                         propertiesArray = [];
                         propertiesTable = createMap<Symbol>();
                         hasComputedStringProperty = false;
                         hasComputedNumberProperty = false;
                     }
                     spreads.push(checkExpression((memberDecl as SpreadElementExpression).expression));
-                    membersAreObjectLiterals.push(false);
                     continue;
                 }
                 else {
@@ -10748,17 +10735,16 @@ namespace ts {
 
             if (spreads.length > 0) {
                 if (propertiesArray.length > 0) {
-                    const t = createObjectLiteralType();
-                    membersAreObjectLiterals.push(true);
-                    spreads.push(t);
+                    spreads.push(createObjectLiteralType());
                 }
                 const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
-                const spread = getSpreadType(spreads, node.symbol, undefined, undefined, membersAreObjectLiterals);
+                const spread = getSpreadType(spreads, node.symbol, undefined, undefined);
                 spread.flags |= propagatedFlags;
                 return spread;
             }
 
             return createObjectLiteralType();
+
             function createObjectLiteralType() {
                 const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.String) : undefined;
                 const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, propertiesArray, IndexKind.Number) : undefined;
