@@ -1,20 +1,20 @@
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(13,30): error TS2339: Property 'x' does not exist on type '{}'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(16,5): error TS2322: Type '{ sn?: string | number; }' is not assignable to type '{ sn: string | number; }'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(11,21): error TS2339: Property 'x' does not exist on type '{}'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(14,5): error TS2322: Type '{ sn?: string | number; }' is not assignable to type '{ sn: string | number; }'.
   Property 'sn' is optional in type '{ sn?: string | number; }' but required in type '{ sn: string | number; }'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(22,5): error TS2322: Type '{ s: string; }' is not assignable to type '{ s: string; b: boolean; }'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(20,5): error TS2322: Type '{ s: string; }' is not assignable to type '{ s: string; b: boolean; }'.
   Property 'b' is missing in type '{ s: string; }'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(24,1): error TS2322: Type 'Bool' is not assignable to type '{ s: string; b: boolean; }'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(22,1): error TS2322: Type 'Bool' is not assignable to type '{ s: string; b: boolean; }'.
   Property 's' is missing in type 'Bool'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(27,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(28,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(31,36): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(31,53): error TS2300: Duplicate identifier 'b'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(36,12): error TS2339: Property 'b' does not exist on type '{}'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(42,9): error TS2339: Property 'm' does not exist on type '{ p: number; }'.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(45,1): error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ x: number; }' has no compatible call signatures.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(46,1): error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(48,39): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
-tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS2322: Type '{ ...U }' is not assignable to type 'U'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(25,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(26,15): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(29,36): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(29,53): error TS2300: Duplicate identifier 'b'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(34,12): error TS2339: Property 'b' does not exist on type '{}'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(40,9): error TS2339: Property 'm' does not exist on type '{ p: number; }'.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(43,1): error TS2349: Cannot invoke an expression whose type lacks a call signature. Type '{ x: number; }' has no compatible call signatures.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(44,1): error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(47,39): error TS2697: Spread properties must be identifiers, property accesses, or object literals.
+tests/cases/conformance/types/spread/objectSpreadNegative.ts(51,12): error TS2322: Type '{ ...U }' is not assignable to type 'U'.
 
 
 ==== tests/cases/conformance/types/spread/objectSpreadNegative.ts (14 errors) ====
@@ -27,11 +27,9 @@ tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS232
     class PublicX {
         public x: number;
     }
-    let privateOptionalx: PrivateOptionalX;
-    let publicx: PublicX;
-    let o3 = { ...publicx, ...privateOptionalx };
-    let sn: string | number = o3.x; // error, x is private
-                                 ~
+    let o3: { ...PublicX, ...PrivateOptionalX };
+    let sn: number = o3.x; // error, x is private
+                        ~
 !!! error TS2339: Property 'x' does not exist on type '{}'.
     let optionalString: { sn?: string };
     let optionalNumber: { sn?: number };
@@ -92,6 +90,7 @@ tests/cases/conformance/types/spread/objectSpreadNegative.ts(52,12): error TS232
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! error TS2351: Cannot use 'new' with an expression whose type lacks a call or construct signature.
     
+    let publicx: PublicX;
     let callableSpread = { ...publicx, ...(n => n + 1) }; // error, can't spread functions
                                           ~~~~~~~~~~~~
 !!! error TS2697: Spread properties must be identifiers, property accesses, or object literals.
