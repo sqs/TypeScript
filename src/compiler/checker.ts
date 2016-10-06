@@ -2301,38 +2301,19 @@ namespace ts {
                 }
 
                 function writeSpreadType(type: SpreadType, flags: TypeFormatFlags) {
-                    // TODO: Refactor this to be less ugly!
                     writePunctuation(writer, SyntaxKind.OpenBraceToken);
                     writer.writeLine();
                     writer.increaseIndent();
-                    if (type.left.flags & TypeFlags.Spread) {
-                        writeSpreadTypeWorker(type.left as SpreadType);
-                    }
-                    else {
-                        const saveInObjectTypeLiteral = inObjectTypeLiteral;
-                        inObjectTypeLiteral = true;
-                        writeObjectLiteralType(resolveStructuredTypeMembers(type.left));
-                        inObjectTypeLiteral = saveInObjectTypeLiteral;
-                    }
 
-                    if (type.isRightFromObjectLiteral) {
-                        const saveInObjectTypeLiteral = inObjectTypeLiteral;
-                        inObjectTypeLiteral = true;
-                        writeObjectLiteralType(resolveStructuredTypeMembers(type.right));
-                        inObjectTypeLiteral = saveInObjectTypeLiteral;
-                    }
-                    else {
-                        writePunctuation(writer, SyntaxKind.DotDotDotToken);
-                        writeType(type.right, TypeFormatFlags.None);
-                        writeSpace(writer);
-                    }
+                    writeSpreadTypeWorker(type, /*initial*/true);
+
                     writer.decreaseIndent();
                     writePunctuation(writer, SyntaxKind.CloseBraceToken);
                 }
 
-                function writeSpreadTypeWorker(type: SpreadType): void {
+                function writeSpreadTypeWorker(type: SpreadType, initial: boolean): void {
                     if (type.left.flags & TypeFlags.Spread) {
-                        writeSpreadTypeWorker(type.left as SpreadType);
+                        writeSpreadTypeWorker(type.left as SpreadType, /*initial*/false);
                     }
                     else {
                         const saveInObjectTypeLiteral = inObjectTypeLiteral;
@@ -2349,8 +2330,13 @@ namespace ts {
                     else {
                         writePunctuation(writer, SyntaxKind.DotDotDotToken);
                         writeType(type.right, TypeFormatFlags.None);
-                        writePunctuation(writer, SyntaxKind.SemicolonToken);
-                        writer.writeLine();
+                        if (initial) {
+                            writeSpace(writer);
+                        }
+                        else {
+                            writePunctuation(writer, SyntaxKind.SemicolonToken);
+                            writer.writeLine();
+                        }
                     }
                 }
 
