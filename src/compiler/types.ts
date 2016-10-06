@@ -2087,6 +2087,12 @@ namespace ts {
         CannotBeNamed
     }
 
+    /* @internal */
+    export const enum SyntheticSymbolKind {
+        UnionOrIntersection,
+        Spread
+    }
+
     export const enum TypePredicateKind {
         This,
         Identifier
@@ -2212,7 +2218,7 @@ namespace ts {
         Merged                  = 0x02000000,  // Merged symbol (created during program binding)
         Transient               = 0x04000000,  // Transient symbol (created during type check)
         Prototype               = 0x08000000,  // Prototype property (no source representation)
-        SyntheticProperty       = 0x10000000,  // Property in union or intersection type
+        SyntheticProperty       = 0x10000000,  // Property in union, intersection or spread type
         Optional                = 0x20000000,  // Optional property
         ExportStar              = 0x40000000,  // Export * declaration
 
@@ -2287,6 +2293,7 @@ namespace ts {
         /* @internal */ isReferenced?: boolean; // True if the symbol is referenced elsewhere
         /* @internal */ isReplaceableByMethod?: boolean; // Can this Javascript class property be replaced by a method symbol?
         /* @internal */ isAssigned?: boolean;   // True if the symbol is a parameter with assignments
+        /* @internal */ syntheticKind?: SyntheticSymbolKind; // Synthetic symbols are either spread or union/intersection
     }
 
     /* @internal */
@@ -2300,6 +2307,8 @@ namespace ts {
         mapper?: TypeMapper;                // Type mapper for instantiation alias
         referenced?: boolean;               // True if alias symbol has been referenced as a value
         containingType?: TypeOperatorType;  // Containing union or intersection type for synthetic property
+        leftSpread?: Type;                  // Left source for synthetic spread property
+        rightSpread?: Type;                 // Right source for synthetic spread property
         hasNonUniformType?: boolean;        // True if constituents have non-uniform types
         isPartial?: boolean;                // True if syntheric property of union type occurs in some but not all constituents
         isDiscriminantProperty?: boolean;   // True if discriminant synthetic property
@@ -2531,6 +2540,7 @@ namespace ts {
 
     /* @internal */
     export interface SpreadType extends Type {
+        // TODO: left and right's type can be restricted to a couple of types only (SpreadType | ObjectType) and (ObjectType | TypeParameter)
         left: Type;
         isLeftFromObjectLiteral?: boolean;
         right: Type;

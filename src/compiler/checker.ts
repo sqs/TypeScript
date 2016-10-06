@@ -4346,10 +4346,11 @@ namespace ts {
          * To get all properties of a spread type, use getPropertiesOfType.
          */
         function resolveSpreadTypeMembers(type: SpreadType) {
-            let stringIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(type.symbol, IndexKind.String),
+            // TODO: This might not be needed any more
+            const stringIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(type.symbol, IndexKind.String),
                                                              unionIndexInfos(getIndexInfoOfType(type.left, IndexKind.String),
                                                                              getIndexInfoOfType(type.right, IndexKind.String)));
-            let numberIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(type.symbol, IndexKind.Number),
+            const numberIndexInfo: IndexInfo = unionIndexInfos(getIndexInfoOfSymbol(type.symbol, IndexKind.Number),
                                                              unionIndexInfos(getIndexInfoOfType(type.left, IndexKind.Number),
                                                                              getIndexInfoOfType(type.right, IndexKind.Number)));
             setObjectTypeMembers(type, emptySymbols, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
@@ -4590,6 +4591,7 @@ namespace ts {
                 propTypes.push(type);
             }
             const result = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient | SymbolFlags.SyntheticProperty | flags, name);
+            result.syntheticKind === SyntheticSymbolKind.UnionOrIntersection;
             result.containingType = containingType;
             result.hasNonUniformType = hasNonUniformType;
             result.isPartial = isPartial;
@@ -4652,9 +4654,6 @@ namespace ts {
             if (type.flags & TypeFlags.UnionOrIntersection) {
                 return getPropertyOfUnionOrIntersectionType(<TypeOperatorType>type, name);
             }
-            //if (type.flags & TypeFlags.Spread) {
-                //return getPropertyOfSpreadType(<SpreadType>type, name);
-            //}
             return undefined;
         }
 
@@ -5768,6 +5767,8 @@ namespace ts {
 
         function getSpreadType(types: Type[], symbol: Symbol, aliasSymbol?: Symbol, aliasTypeArguments?: Type[], membersAreObjectLiterals?: boolean[]): Type {
             // TODO: I'm pretty sure I don't need the boolean[], and can figure it out by checking TypeFlags
+            //    ... no, just make sure that the anonymous types created to hold object-literal properties set their symbol to the symbol parameter
+            //        then isObjectLiteralMember = (symbol === left.symbol)
             if (types.length === 0) {
                 return emptyObjectType;
             }
@@ -5817,7 +5818,7 @@ namespace ts {
                     addSpreadProperty(prop, memberProperties, !isRightObjectLiteral);
                 }
                 for (const prop of getPropertiesOfType(left)) {
-                    addSpreadProperty(prop, memberProperties, false);
+                    addSpreadProperty(prop, memberProperties, /*isFromSpread*/ false);
                 }
                 for (const name in memberProperties) {
                     let isReadonly = false;
@@ -5851,31 +5852,24 @@ namespace ts {
                     else {
                         const propTypes: Type[] = [];
                         const declarations: Declaration[] = [];
-                        let commonType: Type = undefined;
-                        let hasNonUniformType = false;
+                        // TODO: This can only ever be 2, so don't use a loop here.
                         for (const prop of memberProperties[name].slice(0, length).reverse()) {
                             if (prop.declarations) {
                                 addRange(declarations, prop.declarations);
                             }
-                            const type = getTypeOfSymbol(prop);
-                            if (!commonType) {
-                                commonType = type;
-                            }
-                            else if (type !== commonType) {
-                                hasNonUniformType = true;
-                            }
-                            propTypes.push(type);
+                            // TODO: Delay this until a synthetic spread property is seen inside getTypeOfSymbol itself
+                            propTypes.push(getTypeOfSymbol(prop));
                         }
                         const result = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient | SymbolFlags.SyntheticProperty | commonFlags, name);
-                        // TODO: Spread properties should have a list of their originating property instead of resolving the type here
-                        // result.containingType = containingType;
-                        // result.isPartial = isPartial;
-                        result.hasNonUniformType = hasNonUniformType;
+                        result.syntheticKind = SyntheticSymbolKind.Spread;
+                        result.leftSpread = left;
+                        result.rightSpread = right;
                         result.declarations = declarations;
                         if (declarations.length) {
                             result.valueDeclaration = declarations[0];
                         }
                         result.isReadonly = isReadonly;
+                        // TODO: Don't need to do this here, delay it until getTypeOfSymbol (then call getTypeOfSymbol in getRootTypes?).
                         result.type = getUnionType(propTypes);
                         members[name] = result;
                     }
@@ -5883,7 +5877,6 @@ namespace ts {
                 return createAnonymousType(symbol, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
             }
             // one side is a type parameter (TODO: Or union or intersection)
-
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
             spread.left = left;
             spread.right = right;
@@ -19002,15 +18995,22 @@ namespace ts {
 
         function getRootSymbols(symbol: Symbol): Symbol[] {
             if (symbol.flags & SymbolFlags.SyntheticProperty) {
-                const symbols: Symbol[] = [];
-                const name = symbol.name;
-                forEach(getSymbolLinks(symbol).containingType.types, t => {
-                    const symbol = getPropertyOfType(t, name);
-                    if (symbol) {
-                        symbols.push(symbol);
-                    }
-                });
-                return symbols;
+                if (symbol.syntheticKind === SyntheticSymbolKind.Spread) {
+                    const name = symbol.name;
+                    const links = getSymbolLinks(symbol);
+                    return [getPropertyOfType(links.leftSpread, name), getPropertyOfType(links.rightSpread, name)];
+                }
+                else {
+                    const symbols: Symbol[] = [];
+                    const name = symbol.name;
+                    forEach(getSymbolLinks(symbol).containingType.types, t => {
+                        const symbol = getPropertyOfType(t, name);
+                        if (symbol) {
+                            symbols.push(symbol);
+                        }
+                    });
+                    return symbols;
+                }
             }
             else if (symbol.flags & SymbolFlags.Transient) {
                 let target: Symbol;
