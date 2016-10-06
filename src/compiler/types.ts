@@ -2540,9 +2540,8 @@ namespace ts {
 
     /* @internal */
     export interface SpreadType extends Type {
-        // TODO: left and right's type can be restricted to a couple of types only (SpreadType | ObjectType) and (ObjectType | TypeParameter)
-        left: Type;
-        right: Type;
+        left: SpreadType | ResolvedType;
+        right: TypeParameter | ResolvedType;
     }
 
     /* @internal */

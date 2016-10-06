@@ -5798,8 +5798,10 @@ namespace ts {
             }
             // one side is a type parameter (TODO: Or union or intersection)
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
-            spread.left = left;
-            spread.right = right;
+            Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)));
+            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)));
+            spread.left = left as SpreadType | ResolvedType;
+            spread.right = right as TypeParameter | ResolvedType;
             spread.aliasSymbol = aliasSymbol;
             spread.aliasTypeArguments = aliasTypeArguments;
             return spread;
