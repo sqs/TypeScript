@@ -5764,6 +5764,9 @@ namespace ts {
                 return spreadTypes[id];
             }
             const right = types.pop();
+            if (right.flags & TypeFlags.Any) {
+                return anyType;
+            }
             if (right.flags & TypeFlags.Spread) {
                 // spread is right associative and associativity applies, so transform
                 // (T ... U) ... V to T ... (U ... V)
@@ -5776,7 +5779,7 @@ namespace ts {
             }
             const atBeginning = types.length === 0;
             const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
-            if (right.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
+            if (right.flags & TypeFlags.Primitive || left.flags & TypeFlags.Any) {
                 return left;
             }
             if (right.flags & TypeFlags.TypeParameter &&
@@ -5786,9 +5789,8 @@ namespace ts {
                 // for types like T ... T, just return ... T
                 return left;
             }
-            if (!(right.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter | TypeFlags.Spread))
-                && !(left.flags & (TypeFlags.Union | TypeFlags.Intersection | TypeFlags.TypeParameter | TypeFlags.Spread))) {
-                const members = createMap<Symbol | undefined>();
+            if (right.flags & TypeFlags.ObjectType && left.flags & TypeFlags.ObjectType) {
+                const members = createMap<Symbol>();
                 const skippedPrivateMembers = createMap<boolean>();
                 let stringIndexInfo = unionIndexInfos(getIndexInfoOfType(left, IndexKind.String), getIndexInfoOfType(right, IndexKind.String));
                 let numberIndexInfo = unionIndexInfos(getIndexInfoOfType(left, IndexKind.Number), getIndexInfoOfType(right, IndexKind.Number));
@@ -5811,7 +5813,7 @@ namespace ts {
                 for (const leftProp of getPropertiesOfType(left)) {
                     if (leftProp.flags & SymbolFlags.SetAccessor && !(leftProp.flags & SymbolFlags.GetAccessor)
                        || leftProp.name in skippedPrivateMembers) {
-                        // skip set-only properties (methods have already been skipped by the recursive call to getSpreadType)
+                        // skip set-only properties and members that rightProp hides with a private
                         continue;
                     }
                     if (leftProp.name in members) {
@@ -5839,8 +5841,8 @@ namespace ts {
             }
             // one side is a type parameter (TODO: Or union or intersection)
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
-            Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)));
-            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)));
+            Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)), "Actual flags: " + left.flags.toString(2));
+            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)), "Actual flags: " + right.flags.toString(2));
             spread.left = left as SpreadType | ResolvedType;
             spread.right = right as TypeParameter | ResolvedType;
             spread.aliasSymbol = aliasSymbol;
@@ -20308,17 +20310,6 @@ namespace ts {
 
             for (const prop of node.properties) {
                 if (prop.kind === SyntaxKind.SpreadElementExpression) {
-                    const target = (prop as SpreadElementExpression).expression;
-                    switch (target.kind) {
-                        case SyntaxKind.Identifier:
-                        case SyntaxKind.PropertyAccessExpression:
-                        case SyntaxKind.ObjectLiteralExpression:
-                        case SyntaxKind.NullKeyword:
-                            break;
-                        default:
-                            grammarErrorOnNode(target, Diagnostics.Spread_properties_must_be_identifiers_property_accesses_or_object_literals);
-                    }
-
                     continue;
                 }
                 const name = prop.name;
