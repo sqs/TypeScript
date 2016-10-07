@@ -5699,6 +5699,18 @@ namespace ts {
             return type;
         }
 
+        /** This is supposed to convert unions nested inside intersections, but doesn't yet
+         *  Which is why it isn't called inside getSpreadType yet. But it will be! */
+        function getLoweredIntersectionType(types: Type[], aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
+            if (every(types, t => !!(t.flags & TypeFlags.Union))) {
+                // TODO: Might be *any*...but it doesn't matter for the spread case I think since it'll always be generated
+                // such that all types are unions.
+                // anyway, generate a union that consists of intersections.
+                return getUnionType(map(types, t => getIntersectionType((t as UnionType).types)));
+            }
+            return getIntersectionType(types, aliasSymbol, aliasTypeArguments);
+        }
+
         function getTypeFromIntersectionTypeNode(node: IntersectionTypeNode, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
             const links = getNodeLinks(node);
             if (!links.resolvedType) {
@@ -5777,11 +5789,16 @@ namespace ts {
                 types.push(rspread.right);
                 return getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
             }
+            if (right.flags & TypeFlags.Intersection) {
+                const spreads = map((right as IntersectionType).types,
+                                    t => getSpreadType(types.slice().concat([t]), symbol, aliasSymbol, aliasTypeArguments));
+                return getIntersectionType(spreads, aliasSymbol, aliasTypeArguments);
+            }
             if (right.flags & TypeFlags.Union) {
-                // TODO: Intersection will look almost the same, except
-                // that it will need to come *after* the left getSpread, and have
-                // to look at left.right. If left.right is union, then it will have to be
-                // lifted above the intersection in a two-nested loop
+                // TODO: types is mutable, so this block has to happen before the call to `const left = getSpreadType`
+                // but each call to getSpreadType consumes
+                // but I would actually rather put this block after the `left = getSpreadtype` call
+                // I guess for testing purposes I could call slice on every recursive call to getSpreadType...
                 const spreads = map((right as UnionType).types,
                                     t => getSpreadType(types.slice().concat([t]), symbol, aliasSymbol, aliasTypeArguments));
                 return getUnionType(spreads, /*subtypeReduction*/ false, aliasSymbol, aliasTypeArguments);
@@ -5797,6 +5814,11 @@ namespace ts {
                 right.symbol === (left as SpreadType).right.symbol) {
                 // for types like T ... T, just return ... T
                 return left;
+            }
+            if (left.flags & TypeFlags.Intersection) {
+                const spreads = map((left as IntersectionType).types,
+                                  t => getSpreadType(types.slice().concat([t, right]), symbol, aliasSymbol, aliasTypeArguments));
+                return getIntersectionType(spreads, aliasSymbol, aliasTypeArguments);
             }
             if (left.flags & TypeFlags.Union) {
                 const spreads = map((left as UnionType).types,
@@ -5853,7 +5875,6 @@ namespace ts {
                 }
                 return createAnonymousType(symbol, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
             }
-            // one side is a type parameter (TODO: Or union or intersection)
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
             Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)), "Left flags: " + left.flags.toString(2));
             Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)), "Right flags: " + right.flags.toString(2));
@@ -6810,7 +6831,7 @@ namespace ts {
                 }
 
                 if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
-                    // you only see this for spreads with type parameters (TODO: and intersections)
+                    // you only see this for spreads with type parameters
                     if (!(spreadTypeRelatedTo(source as SpreadType, target as SpreadType))) {
                         if (reportErrors) {
                             reportRelationError(headMessage, source, target);
