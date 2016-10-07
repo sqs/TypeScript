@@ -5777,6 +5777,15 @@ namespace ts {
                 types.push(rspread.right);
                 return getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
             }
+            if (right.flags & TypeFlags.Union) {
+                // TODO: Intersection will look almost the same, except
+                // that it will need to come *after* the left getSpread, and have
+                // to look at left.right. If left.right is union, then it will have to be
+                // lifted above the intersection in a two-nested loop
+                const spreads = map((right as UnionType).types,
+                                    t => getSpreadType(types.slice().concat([t]), symbol, aliasSymbol, aliasTypeArguments));
+                return getUnionType(spreads, /*subtypeReduction*/ false, aliasSymbol, aliasTypeArguments);
+            }
             const atBeginning = types.length === 0;
             const left = getSpreadType(types, symbol, aliasSymbol, aliasTypeArguments);
             if (right.flags & TypeFlags.Primitive || left.flags & TypeFlags.Any) {
@@ -5788,6 +5797,11 @@ namespace ts {
                 right.symbol === (left as SpreadType).right.symbol) {
                 // for types like T ... T, just return ... T
                 return left;
+            }
+            if (left.flags & TypeFlags.Union) {
+                const spreads = map((left as UnionType).types,
+                                  t => getSpreadType(types.slice().concat([t, right]), symbol, aliasSymbol, aliasTypeArguments));
+                return getUnionType(spreads, /*subTypeReduction*/ false, aliasSymbol, aliasTypeArguments);
             }
             if (right.flags & TypeFlags.ObjectType && left.flags & TypeFlags.ObjectType) {
                 const members = createMap<Symbol>();
@@ -5841,8 +5855,8 @@ namespace ts {
             }
             // one side is a type parameter (TODO: Or union or intersection)
             const spread = spreadTypes[id] = createObjectType(TypeFlags.Spread, symbol) as SpreadType;
-            Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)), "Actual flags: " + left.flags.toString(2));
-            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)), "Actual flags: " + right.flags.toString(2));
+            Debug.assert(!!(left.flags & (TypeFlags.Spread | TypeFlags.ObjectType)), "Left flags: " + left.flags.toString(2));
+            Debug.assert(!!(right.flags & (TypeFlags.TypeParameter | TypeFlags.ObjectType)), "Right flags: " + right.flags.toString(2));
             spread.left = left as SpreadType | ResolvedType;
             spread.right = right as TypeParameter | ResolvedType;
             spread.aliasSymbol = aliasSymbol;
@@ -6795,19 +6809,19 @@ namespace ts {
                     }
                 }
 
-                if (source.flags & TypeFlags.Spread) {
-                    // you only see this for spreads with type parameters (TODO: and unions/intersections)
-                    if (target.flags & TypeFlags.Spread) {
-                        if (!(spreadTypeRelatedTo(source as SpreadType, target as SpreadType))) {
+                if (source.flags & TypeFlags.Spread && target.flags & TypeFlags.Spread) {
+                    // you only see this for spreads with type parameters (TODO: and intersections)
+                    if (!(spreadTypeRelatedTo(source as SpreadType, target as SpreadType))) {
+                        if (reportErrors) {
                             reportRelationError(headMessage, source, target);
-                            return Ternary.False;
                         }
-                        const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
-                        const apparentSource = getApparentType(source);
-                        if (result = objectTypeRelatedTo(apparentSource, source, getApparentType(target), reportStructuralErrors)) {
-                            errorInfo = saveErrorInfo;
-                            return result;
-                        }
+                        return Ternary.False;
+                    }
+                    const reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
+                    const apparentSource = getApparentType(source);
+                    if (result = objectTypeRelatedTo(apparentSource, source, getApparentType(target), reportStructuralErrors)) {
+                        errorInfo = saveErrorInfo;
+                        return result;
                     }
                 }
 
@@ -14966,9 +14980,11 @@ namespace ts {
             forEach(node.members, checkSourceElement);
             if (produceDiagnostics) {
                 const type = getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(node);
-                checkIndexConstraints(type);
-                checkTypeForDuplicateIndexSignatures(node);
-                checkObjectTypeForDuplicateDeclarations(node);
+                if (type.flags & TypeFlags.ObjectType) {
+                    checkIndexConstraints(type);
+                    checkTypeForDuplicateIndexSignatures(node);
+                    checkObjectTypeForDuplicateDeclarations(node);
+                }
             }
         }
 

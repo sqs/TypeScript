@@ -1802,7 +1802,7 @@ namespace ts {
 
     export interface JSDocRecordType extends JSDocType {
         kind: SyntaxKind.JSDocRecordType;
-        literal: TypeLiteralNode;
+        literal: TypeLiteralNode;
     }
 
     export interface JSDocTypeReference extends JSDocType {
