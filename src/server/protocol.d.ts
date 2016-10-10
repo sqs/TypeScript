@@ -505,7 +505,7 @@ declare namespace ts.server.protocol {
 
     export interface ExternalFile {
         fileName: string;
-        scriptKind?: ScriptKind;
+        scriptKind?: ScriptKindName;
         hasMixedContent?: boolean;
         content?: string;
     }
@@ -661,6 +661,8 @@ declare namespace ts.server.protocol {
     export interface ConfigureResponse extends Response {
     }
 
+    export type ScriptKindName = "TS" | "JS" | "TSX" | "JSX";
+
     /**
       *  Information found in an "open" request.
       */
@@ -674,7 +676,7 @@ declare namespace ts.server.protocol {
          * Used to specify the script kind of the file explicitly. It could be one of the following:
          *      "TS", "JS", "TSX", "JSX"
          */
-        scriptKindName?: "TS" | "JS" | "TSX" | "JSX";
+        scriptKindName?: ScriptKindName;
     }
 
     /**

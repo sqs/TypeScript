@@ -62,9 +62,13 @@ namespace ts.server {
         hasMixedContent: _ => false
     };
 
+    function normalizeScriptKind(scriptKind: ScriptKind | protocol.ScriptKindName): ScriptKind {
+        return typeof scriptKind === "string" ? scriptKindNameToScriptKind(scriptKind) : scriptKind;
+    }
+
     const externalFilePropertyReader: FilePropertyReader<protocol.ExternalFile> = {
         getFileName: x => x.fileName,
-        getScriptKind: x => x.scriptKind,
+        getScriptKind: x => normalizeScriptKind(x.scriptKind),
         hasMixedContent: x => x.hasMixedContent
     };
 
@@ -1137,7 +1141,7 @@ namespace ts.server {
                     const scriptInfo = this.getScriptInfo(file.fileName);
                     Debug.assert(!scriptInfo || !scriptInfo.isOpen);
                     const normalizedPath = scriptInfo ? scriptInfo.fileName : toNormalizedPath(file.fileName);
-                    this.openClientFileWithNormalizedPath(normalizedPath, file.content, file.scriptKind, file.hasMixedContent);
+                    this.openClientFileWithNormalizedPath(normalizedPath, file.content, normalizeScriptKind(file.scriptKind), file.hasMixedContent);
                 }
             }
 

@@ -131,6 +131,21 @@ namespace ts.server {
         return <NormalizedPath>fileName;
     }
 
+    export function scriptKindNameToScriptKind(scriptKindName: protocol.ScriptKindName): ScriptKind {
+        switch (scriptKindName) {
+            case "TS":
+                return ScriptKind.TS;
+            case "JS":
+                return ScriptKind.JS;
+            case "TSX":
+                return ScriptKind.TSX;
+            case "JSX":
+                return ScriptKind.JSX;
+            default:
+                return ScriptKind.Unknown;
+        }
+    }
+
     export interface NormalizedPathMap<T> {
         get(path: NormalizedPath): T;
         set(path: NormalizedPath, value: T): void;
