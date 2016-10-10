@@ -5837,7 +5837,6 @@ namespace ts {
                 for (const leftProp of getPropertiesOfType(left)) {
                     if (leftProp.flags & SymbolFlags.SetAccessor && !(leftProp.flags & SymbolFlags.GetAccessor)
                        || leftProp.name in skippedPrivateMembers) {
-                        // skip set-only properties and members that rightProp hides with a private
                         continue;
                     }
                     if (leftProp.name in members) {
@@ -10741,7 +10740,7 @@ namespace ts {
                     spreads.push(createObjectLiteralType());
                 }
                 const propagatedFlags = getPropagatingFlagsOfTypes(spreads, /*excludeKinds*/ TypeFlags.Nullable);
-                const spread = getSpreadType(spreads, node.symbol);
+                const spread = getSpreadType(spreads, node.symbol, undefined, undefined);
                 spread.flags |= propagatedFlags;
                 return spread;
             }
