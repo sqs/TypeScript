@@ -5783,10 +5783,9 @@ namespace ts {
                 return getIntersectionType(spreads, aliasSymbol, aliasTypeArguments);
             }
             if (right.flags & TypeFlags.Union) {
-                // TODO: types is mutable, so this block has to happen before the call to `const left = getSpreadType`
-                // but each call to getSpreadType consumes
-                // but I would actually rather put this block after the `left = getSpreadtype` call
-                // I guess for testing purposes I could call slice on every recursive call to getSpreadType...
+                // TODO: types is mutable, so this block has to happen before the call to `const left = getSpreadType(...)`
+                // because that call consumes the array. It might be worthwhile to use a simple linked list here instead.
+                // It would avoid the slice+concat call that is needed here for multiple calls to getSpreadType.
                 const spreads = map((right as UnionType).types,
                                     t => getSpreadType(types.slice().concat([t]), symbol, aliasSymbol, aliasTypeArguments));
                 return getUnionType(spreads, /*subtypeReduction*/ false, aliasSymbol, aliasTypeArguments);
@@ -6893,40 +6892,27 @@ namespace ts {
             }
 
             function spreadTypeRelatedTo(source: SpreadType, target: SpreadType): boolean {
-                // (Spread ... Object) | (Spread | Object ... TypeParameter)
-                // in other words, if the right side is Object, then the left side must be a Spread.
-                if (source.right.flags & TypeFlags.ObjectType &&
-                    target.right.flags & TypeFlags.ObjectType) {
+                // If the right side of a spread type is ObjectType, then the left side must be a Spread.
+                // Structural compatibility of the spreads' object types are checked separately in isRelatedTo,
+                // so just skip them for now.
+                if (source.right.flags & TypeFlags.ObjectType || target.right.flags & TypeFlags.ObjectType) {
+                    return spreadTypeRelatedTo(source.right.flags & TypeFlags.ObjectType ? source.left as SpreadType : source,
+                                               target.right.flags & TypeFlags.ObjectType ? target.left as SpreadType : target);
+                }
+                // If both right sides are type parameters, then they must be identical for the spread types to be related.
+                // It also means that the left sides are either spread types or object types.
+
+                // if one left is object and the other is spread, that means the second has another type parameter. which isn't allowed
+                if (target.right.symbol !== source.right.symbol) {
+                    return false;
+                }
+                if (source.left.flags & TypeFlags.Spread && target.left.flags & TypeFlags.Spread) {
+                    // If the left sides are both spread types, then recursively check them.
                     return spreadTypeRelatedTo(source.left as SpreadType, target.left as SpreadType);
                 }
-                if (source.right.flags & TypeFlags.ObjectType) {
-                    /// target.right is TypeParameter, skip source.right, but keep looking at target
-                    return spreadTypeRelatedTo(source.left as SpreadType, target);
-                }
-                if (target.right.flags & TypeFlags.ObjectType) {
-                    /// source.right is TypeParameter, skip target.right, but keep looking at source
-                    return spreadTypeRelatedTo(source, target.left as SpreadType);
-                }
-                else {
-                    // both rights are type parameters, so they must be identical
-                    // and both lefts must be the same:
-                    // if one left is object and the other is spread, that means the second has another type parameter. which isn't allowed
-                    if (target.right.symbol !== source.right.symbol) {
-                        return false;
-                    }
-                    if (source.left.flags & TypeFlags.Spread && target.left.flags & TypeFlags.Spread) {
-                        return spreadTypeRelatedTo(source.left as SpreadType, target.left as SpreadType);
-                    }
-                    else if (source.left.flags & TypeFlags.ObjectType && target.left.flags & TypeFlags.ObjectType) {
-                        return true; // let structural compatibility figure it out later
-                    }
-                    else {
-                        // one side is a spread, so it must have more type parameters, which will not be matched by the other side
-                        // return false immediately instead of descending to find this out.
-                        return false;
-                    }
-                }
-
+                // If the left sides are both object types, then isRelatedTo will check the structural compatibility next.
+                // Otherwise, one side has more type parameters than the other and the spread types are not related.
+                return !!(source.left.flags & TypeFlags.ObjectType && target.left.flags & TypeFlags.ObjectType);
             }
 
             function isIdenticalTo(source: Type, target: Type): Ternary {
