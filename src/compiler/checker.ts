@@ -5699,18 +5699,6 @@ namespace ts {
             return type;
         }
 
-        /** This is supposed to convert unions nested inside intersections, but doesn't yet
-         *  Which is why it isn't called inside getSpreadType yet. But it will be! */
-        function getLoweredIntersectionType(types: Type[], aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
-            if (every(types, t => !!(t.flags & TypeFlags.Union))) {
-                // TODO: Might be *any*...but it doesn't matter for the spread case I think since it'll always be generated
-                // such that all types are unions.
-                // anyway, generate a union that consists of intersections.
-                return getUnionType(map(types, t => getIntersectionType((t as UnionType).types)));
-            }
-            return getIntersectionType(types, aliasSymbol, aliasTypeArguments);
-        }
-
         function getTypeFromIntersectionTypeNode(node: IntersectionTypeNode, aliasSymbol?: Symbol, aliasTypeArguments?: Type[]): Type {
             const links = getNodeLinks(node);
             if (!links.resolvedType) {
