@@ -205,3 +205,37 @@ result4.a;
 >result4 : Symbol(result4, Decl(objectSpreadInference.ts, 46, 3))
 >a : Symbol(C.a, Decl(objectSpreadInference.ts, 24, 16))
 
+declare function removeIndexSignature<T>(t: { ...T, a: number, [s: string]: number, [n: number]: number }): T;
+>removeIndexSignature : Symbol(removeIndexSignature, Decl(objectSpreadInference.ts, 48, 10))
+>T : Symbol(T, Decl(objectSpreadInference.ts, 50, 38))
+>t : Symbol(t, Decl(objectSpreadInference.ts, 50, 41))
+>T : Symbol(T, Decl(objectSpreadInference.ts, 50, 38))
+>a : Symbol(a, Decl(objectSpreadInference.ts, 50, 51))
+>s : Symbol(s, Decl(objectSpreadInference.ts, 50, 64))
+>n : Symbol(n, Decl(objectSpreadInference.ts, 50, 85))
+>T : Symbol(T, Decl(objectSpreadInference.ts, 50, 38))
+
+interface I {
+>I : Symbol(I, Decl(objectSpreadInference.ts, 50, 110))
+
+    a: number;
+>a : Symbol(I.a, Decl(objectSpreadInference.ts, 51, 13))
+
+    b: number;
+>b : Symbol(I.b, Decl(objectSpreadInference.ts, 52, 14))
+
+    [s: string]: number;
+>s : Symbol(s, Decl(objectSpreadInference.ts, 54, 5))
+
+    [n: number]: number;
+>n : Symbol(n, Decl(objectSpreadInference.ts, 55, 5))
+}
+let i: I;
+>i : Symbol(i, Decl(objectSpreadInference.ts, 57, 3))
+>I : Symbol(I, Decl(objectSpreadInference.ts, 50, 110))
+
+let result5 = removeIndexSignature(i);
+>result5 : Symbol(result5, Decl(objectSpreadInference.ts, 58, 3))
+>removeIndexSignature : Symbol(removeIndexSignature, Decl(objectSpreadInference.ts, 48, 10))
+>i : Symbol(i, Decl(objectSpreadInference.ts, 57, 3))
+

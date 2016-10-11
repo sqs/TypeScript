@@ -1,13 +1,3 @@
-declare function removeIndexSignature<T>(t: { ...T, a: number, [s: string]: number, [n: number]: number }): T;
-interface I {
-    a: number;
-    b: number;
-    [s: string]: number;
-    [n: number]: number;
-}
-let i: I;
-let result5 = removeIndexSignature(i);
-
 interface Result<T,U,V> {
     t: T;
     u: U;
@@ -58,3 +48,12 @@ let result4 = destructureRevive<C>({ a: 12, kind: 0 });
 result4.method();
 result4.a;
 
+declare function removeIndexSignature<T>(t: { ...T, a: number, [s: string]: number, [n: number]: number }): T;
+interface I {
+    a: number;
+    b: number;
+    [s: string]: number;
+    [n: number]: number;
+}
+let i: I;
+let result5 = removeIndexSignature(i);

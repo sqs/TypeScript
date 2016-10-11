@@ -49,6 +49,16 @@ let result4 = destructureRevive<C>({ a: 12, kind: 0 });
 result4.method();
 result4.a;
 
+declare function removeIndexSignature<T>(t: { ...T, a: number, [s: string]: number, [n: number]: number }): T;
+interface I {
+    a: number;
+    b: number;
+    [s: string]: number;
+    [n: number]: number;
+}
+let i: I;
+let result5 = removeIndexSignature(i);
+
 
 //// [objectSpreadInference.js]
 var __assign = (this && this.__assign) || Object.assign || function(t) {
@@ -97,3 +107,5 @@ var result3 = destructureRevive({ a: 12, kind: 0 });
 var result4 = destructureRevive({ a: 12, kind: 0 });
 result4.method();
 result4.a;
+var i;
+var result5 = removeIndexSignature(i);

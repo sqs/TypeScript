@@ -245,3 +245,38 @@ result4.a;
 >result4 : C
 >a : number
 
+declare function removeIndexSignature<T>(t: { ...T, a: number, [s: string]: number, [n: number]: number }): T;
+>removeIndexSignature : <T>(t: { ...T; [s: string]: number; [n: number]: number; a: number; }) => T
+>T : T
+>t : { ...T; [s: string]: number; [n: number]: number; a: number; }
+>T : T
+>a : number
+>s : string
+>n : number
+>T : T
+
+interface I {
+>I : I
+
+    a: number;
+>a : number
+
+    b: number;
+>b : number
+
+    [s: string]: number;
+>s : string
+
+    [n: number]: number;
+>n : number
+}
+let i: I;
+>i : I
+>I : I
+
+let result5 = removeIndexSignature(i);
+>result5 : { b: number; }
+>removeIndexSignature(i) : { b: number; }
+>removeIndexSignature : <T>(t: { ...T; [s: string]: number; [n: number]: number; a: number; }) => T
+>i : I
+
