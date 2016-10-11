@@ -107,6 +107,13 @@ declare namespace ts.server.protocol {
     }
 
     /**
+     * A response for ReloadProjectsRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface ReloadProjectsResponse extends Response {
+    }
+
+    /**
       * Server-initiated event message
       */
     export interface Event extends Message {
@@ -178,7 +185,7 @@ declare namespace ts.server.protocol {
      * A response for TodoCommentRequest request
      */
     export interface TodoCommentsResponse extends Response {
-        body: TodoCommentsResponseBody;
+        body?: TodoCommentsResponseBody;
     }
 
     /**
@@ -219,7 +226,7 @@ declare namespace ts.server.protocol {
      * A response for IndentationRequest request
      */
     export interface IndentationResponse extends Response {
-        body: IndentationResponseBody;
+        body?: IndentationResponseBody;
     }
 
     export interface IndentationResponseBody {
@@ -255,6 +262,7 @@ declare namespace ts.server.protocol {
      * A request to retrieve compiler options diagnostics for a project
      */
     export interface CompilerOptionsDiagnosticsRequest extends Request {
+        command: typeof CommandNames.CompilerOptionsDiagnosticsFull;
         arguments: CompilerOptionsDiagnosticsRequestArgs;
     }
 
@@ -267,6 +275,18 @@ declare namespace ts.server.protocol {
          */
         projectFileName: string;
     }
+
+    /**
+     * A response for CompilerOptionsDiagnosticsRequest request.
+     */
+    export interface CompilerOptionsDiagnosticsResponse extends Response {
+        body?: CompilerOptionsDiagnosticsResponseBody;
+    }
+
+    /**
+     * A list of compiler options diagnostics
+     */
+    export type CompilerOptionsDiagnosticsResponseBody = DiagnosticWithLinePosition[];
 
     /**
       * Response message body for "projectInfo" request
@@ -369,6 +389,40 @@ declare namespace ts.server.protocol {
          */
         length: number;
     }
+
+    /**
+     * Request encoded semantic classifications for a selected range in file
+     */
+    export interface EncodedSemanticClassificationsRequest extends FileRequest {
+        command: typeof CommandNames.EncodedSemanticClassificationsFull;
+        arguments: EncodedSemanticClassificationsRequestArgs;
+    }
+
+    /**
+     * Arguments for EncodedSemanticClassificationsRequest request.
+     */
+    export interface EncodedSemanticClassificationsRequestArgs extends FileRequestArgs {
+        /**
+         * Start position of the span.
+         */
+        start: number;
+        /**
+         * Length of the span.
+         */
+        length: number;
+    }
+
+    /**
+     * Response for EncodedSemanticClassificationsRequest request.
+     */
+    export interface EncodedSemanticClassificationsResponse extends Response {
+        body?: EncodedSemanticClassificationsResponseBody;
+    }
+
+    /**
+     * Encoded classifications spans
+     */
+    export type EncodedSemanticClassificationsResponseBody = Classifications;
 
     /**
       * Arguments in document highlight request; include: filesToSearch, file,
@@ -503,7 +557,7 @@ declare namespace ts.server.protocol {
     }
 
     export interface BraceCompletionResponse extends Response {
-        arguments: BraceCompletionResponseBody;
+        body?: BraceCompletionResponseBody;
     }
 
     /**
@@ -512,30 +566,12 @@ declare namespace ts.server.protocol {
     export type BraceCompletionResponseBody = boolean;
 
     /**
-     * Request to find matching braces for a given position in file.
-     */
-    export interface BraceMatchingRequest extends FileLocationRequest {
-        command: typeof CommandNames.Brace | typeof CommandNames.BraceFull;
-    }
-
-    /**
-     * Response for BraceMatchingRequest request.
-     */
-    export interface BraceMatchingResponse extends Response {
-        body: BraceMatchingResponseBody;
-    }
-
-    /**
-     * List of ranges containing matching braces for a specified location in file
-     */
-    export type BraceMatchingResponseBody = protocol.TextSpan[] | ts.TextSpan[];
-
-    /**
       * Get occurrences request; value of command field is
       * "occurrences". Return response giving spans that are relevant
       * in the file at a given line and column.
       */
     export interface OccurrencesRequest extends FileLocationRequest {
+        command: typeof CommandNames.Occurrences;
     }
 
     export interface OccurrencesResponseItem extends FileSpan {
@@ -546,8 +582,13 @@ declare namespace ts.server.protocol {
     }
 
     export interface OccurrencesResponse extends Response {
-        body?: OccurrencesResponseItem[];
+        body?: OccurencesResponseBody;
     }
+
+    /**
+     * A list of relevant spans
+     */
+    export type OccurencesResponseBody = OccurrencesResponseItem[];
 
     /**
       * Get document highlights request; value of command field is
@@ -555,6 +596,7 @@ declare namespace ts.server.protocol {
       * in the file at a given line and column.
       */
     export interface DocumentHighlightsRequest extends FileLocationRequest {
+        command: typeof CommandNames.DocumentHighlights | typeof CommandNames.DocumentHighlightsFull;
         arguments: DocumentHighlightsRequestArgs;
     }
 
@@ -585,8 +627,10 @@ declare namespace ts.server.protocol {
      * Response for a DocumentHighlightsRequest request.
      */
     export interface DocumentHighlightsResponse extends Response {
-        body?: DocumentHighlightsItem[];
+        body?: DocumentHighlightsResponseBody;
     }
+
+    export type DocumentHighlightsResponseBody = DocumentHighlightsItem[] | DocumentHighlights[]; 
 
     /**
       * Find references request; value of command field is
@@ -975,7 +1019,7 @@ declare namespace ts.server.protocol {
     }
 
     /**
-      * Response to "configure" request.  This is just an acknowledgement, so
+      * Response to "configure" request. This is just an acknowledgement, so
       * no body field is required.
       */
     export interface ConfigureResponse extends Response {
@@ -1110,6 +1154,7 @@ declare namespace ts.server.protocol {
      * or all open loose files and its transitive closure of referenced files if 'useOneInferredProject' is true.
      */
     export interface SetCompilerOptionsForInferredProjectsRequest extends Request {
+        command: typeof CommandNames.CompilerOptionsForInferredProjects;
         arguments: SetCompilerOptionsForInferredProjectsArgs;
     }
 
@@ -1124,11 +1169,32 @@ declare namespace ts.server.protocol {
     }
 
     /**
+     * Response for SetCompilerOptionsForInferredProjectsRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface SetCompilerOptionsForInferredProjectsResponse extends Response {
+    }
+
+    /**
       *  Exit request; value of command field is "exit".  Ask the server process
       *  to exit.
       */
     export interface ExitRequest extends Request {
         command: typeof CommandNames.Exit;
+    }
+
+    /**
+     * Requests to discard semantic caches in all open projects
+     */
+    export interface CleanupRequest extends Request {
+        command: typeof CommandNames.Cleanup;
+    }
+
+    /**
+     * Response to CleanupRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface CleanupResponse extends Response {
     }
 
     /**
@@ -1140,6 +1206,13 @@ declare namespace ts.server.protocol {
       */
     export interface CloseRequest extends FileRequest {
         command: typeof CommandNames.Close;
+    }
+
+    /**
+     * A response for CloseRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface CloseResponse extends Response {
     }
 
     /**
@@ -1168,7 +1241,7 @@ declare namespace ts.server.protocol {
      * Response for CompileOnSaveAffectedFileListRequest request; 
      */
     export interface CompileOnSaveAffectedFileListResponse extends Response {
-        body: CompileOnSaveAffectedFileListResponseBody;
+        body?: CompileOnSaveAffectedFileListResponseBody;
     }
 
     export type CompileOnSaveAffectedFileListResponseBody = CompileOnSaveAffectedFileListSingleProject[]; 
@@ -1185,7 +1258,7 @@ declare namespace ts.server.protocol {
      * Response for CompileOnSaveEmitFileRequest request;
      */
     export interface CompileOnSaveEmitFileResponse extends Response {
-        body: CompileOnSaveEmitFileResponseBody;
+        body?: CompileOnSaveEmitFileResponseBody;
     }
 
     /**
@@ -1616,6 +1689,7 @@ declare namespace ts.server.protocol {
       * help.
       */
     export interface SignatureHelpRequest extends FileLocationRequest {
+        command: typeof CommandNames.SignatureHelp | typeof CommandNames.SignatureHelpFull;
         arguments: SignatureHelpRequestArgs;
     }
 
@@ -1623,13 +1697,19 @@ declare namespace ts.server.protocol {
      * Response object for a SignatureHelpRequest.
      */
     export interface SignatureHelpResponse extends Response {
-        body?: SignatureHelpItems;
+        body?: SignatureHelpResponseBody;
     }
+
+    /**
+     * A set of signature help items
+     */
+    export type SignatureHelpResponseBody = SignatureHelpItems | ts.SignatureHelpItems;
 
     /**
       * Synchronous request for semantic diagnostics of one file.
       */
     export interface SemanticDiagnosticsSyncRequest extends FileRequest {
+        command: typeof CommandNames.SemanticDiagnosticsSync;
         arguments: SemanticDiagnosticsSyncRequestArgs;
     }
 
@@ -1641,13 +1721,19 @@ declare namespace ts.server.protocol {
       * Response object for synchronous sematic diagnostics request.
       */
     export interface SemanticDiagnosticsSyncResponse extends Response {
-        body?: Diagnostic[] | DiagnosticWithLinePosition[];
+        body?: SemanticDiagnosticsSyncResponseBody;
     }
+
+    /**
+     * A list of semantic diagnostics
+     */
+    export type SemanticDiagnosticsSyncResponseBody = Diagnostic[] | DiagnosticWithLinePosition[];
 
     /**
       * Synchronous request for syntactic diagnostics of one file.
       */
     export interface SyntacticDiagnosticsSyncRequest extends FileRequest {
+        command: typeof CommandNames.SyntacticDiagnosticsSync;
         arguments: SyntacticDiagnosticsSyncRequestArgs;
     }
 
@@ -1659,8 +1745,13 @@ declare namespace ts.server.protocol {
       * Response object for synchronous syntactic diagnostics request.
       */
     export interface SyntacticDiagnosticsSyncResponse extends Response {
-        body?: Diagnostic[] | DiagnosticWithLinePosition[];
+        body?: SyntacticDiagnosticsSyncResponseBody;
     }
+
+    /**
+     * A list of syntactic diagnostics
+     */
+    export type SyntacticDiagnosticsSyncResponseBody = Diagnostic[] | DiagnosticWithLinePosition[];
 
     /**
     * Arguments for GeterrForProject request.
@@ -1684,7 +1775,15 @@ declare namespace ts.server.protocol {
       * it request for every file in this project.
       */
     export interface GeterrForProjectRequest extends Request {
+        command: typeof CommandNames.GeterrForProject;
         arguments: GeterrForProjectRequestArgs;
+    }
+
+    /**
+     * A response for GeterrForProjectRequest. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface GeterrForProjectResponse extends Response {
     }
 
     /**
@@ -1715,7 +1814,15 @@ declare namespace ts.server.protocol {
       * file that is currently visible, in most-recently-used order.
       */
     export interface GeterrRequest extends Request {
+        command: typeof CommandNames.Geterr;
         arguments: GeterrRequestArgs;
+    }
+
+    /**
+     * A response for GeterrRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface GetErrResponse extends Response {
     }
 
     /**
@@ -1802,14 +1909,22 @@ declare namespace ts.server.protocol {
       * The two names can be identical.
       */
     export interface ReloadRequest extends FileRequest {
+        command: typeof CommandNames.Reload;
         arguments: ReloadRequestArgs;
     }
 
     /**
-      * Response to "reload" request.  This is just an acknowledgement, so
-      * no body field is required.
+      * Response to "reload" request.
       */
     export interface ReloadResponse extends Response {
+        body?: ReloadResponseBody;
+    }
+
+    /**
+     * reloadFinished is true if reload was completed successfully
+     */
+    export interface ReloadResponseBody { 
+        reloadFinished: boolean 
     }
 
     /**
@@ -1831,8 +1946,16 @@ declare namespace ts.server.protocol {
       * "saveto" request.
       */
     export interface SavetoRequest extends FileRequest {
+        command: typeof CommandNames.Saveto;
         arguments: SavetoRequestArgs;
     }
+
+    /**
+     * A responce for Saveto request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface SavetoResponse extends Response {
+    } 
 
     /**
       * Arguments for navto request message.
@@ -1863,6 +1986,7 @@ declare namespace ts.server.protocol {
       * context for the search is given by the named file.
       */
     export interface NavtoRequest extends FileRequest {
+        command: typeof CommandNames.Navto | typeof CommandNames.NavtoFull;
         arguments: NavtoRequestArgs;
     }
 
@@ -1927,8 +2051,13 @@ declare namespace ts.server.protocol {
       * item gives a symbol that matched the search term.
       */
     export interface NavtoResponse extends Response {
-        body?: NavtoItem[];
+        body?: NavToResponseBody;
     }
+
+    /**
+     * A list of found navto items;
+     */
+    export type NavToResponseBody = NavtoItem[] | NavigateToItem[];
 
     /**
       * Arguments for change request message.
@@ -1951,10 +2080,17 @@ declare namespace ts.server.protocol {
     }
 
     /**
+     * A response for ChangeRequest request. This is just an acknowledgement, so
+     * no body field is required.
+     */
+    export interface ChangeResponse extends Response {
+    }
+
+    /**
       * Response to "brace" request.
       */
     export interface BraceResponse extends Response {
-        body?: TextSpan[];
+        body?: BraceResponseBody;
     }
 
     /**
@@ -1963,7 +2099,13 @@ declare namespace ts.server.protocol {
       * found in file at location line, offset.
       */
     export interface BraceRequest extends FileLocationRequest {
+        command: typeof CommandNames.Brace | typeof CommandNames.BraceFull;
     }
+
+    /**
+     * List of ranges containing matching braces for a specified location in file
+     */
+    export type BraceResponseBody = protocol.TextSpan[] | ts.TextSpan[];
 
     /**
       * NavBar items request; value of command field is "navbar".
@@ -1971,6 +2113,7 @@ declare namespace ts.server.protocol {
       * extracted from the requested file.
       */
     export interface NavBarRequest extends FileRequest {
+        command: typeof CommandNames.NavBar | typeof CommandNames.NavBarFull;
     }
 
     export interface NavigationBarItem {
@@ -2005,7 +2148,48 @@ declare namespace ts.server.protocol {
         indent: number;
     }
 
+    /**
+     * Response to NavBarRequest
+     */
     export interface NavBarResponse extends Response {
-        body?: NavigationBarItem[];
+        body?: NavBarResponseBody;
     }
+
+    /**
+     * Array of navigation bar items
+     */
+    export type NavBarResponseBody = NavigationBarItem[] | ts.NavigationBarItem[];
+
+    /**
+     * Request to retrieve proper breakpoint span for a given location.
+     */
+    export interface BreakpointStatementRequest extends FileLocationRequest {
+        command: typeof CommandNames.BreakpointStatement;
+    }
+
+    /**
+     * Response for BreakpointStatementRequest request.
+     */
+    export interface BreakpointStatementResponse extends Response {
+        body?: BreakpointStatementResponseBody;
+    }
+
+    /**
+     * Span for a breakpoint
+     */
+    export type BreakpointStatementResponseBody = ts.TextSpan;
+
+    export interface NameOfDottedSpanRequest extends FileLocationRequest {
+        command: typeof CommandNames.NameOrDottedNameSpan;
+        arguments: NameOfDottedSpanRequestArgs;
+    }
+
+    export interface NameOfDottedSpanRequestArgs extends FileLocationRequestArgs {
+    }
+
+    export interface NameOfDottedSpanResponse extends Response {
+        body?: NameOfDottedSpanResponseBody;
+    }
+
+    export type NameOfDottedSpanResponseBody = ts.TextSpan;
 }

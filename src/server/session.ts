@@ -278,7 +278,7 @@ namespace ts.server {
             }
         }
 
-        private getEncodedSemanticClassifications(args: protocol.SemanticDiagnosticsRequestArgs) {
+        private getEncodedSemanticClassifications(args: protocol.EncodedSemanticClassificationsRequestArgs) {
             const { file, project } = this.getFileAndProject(args);
             return project.getLanguageService().getEncodedSemanticClassifications(file, args);
         }
@@ -1311,11 +1311,11 @@ namespace ts.server {
             [CommandNames.Indentation]: (request: protocol.IndentationRequest) => {
                 return this.requiredResponse<protocol.IndentationResponseBody>(this.getIndentation(request.arguments));
             },
-            [CommandNames.NameOrDottedNameSpan]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getNameOrDottedNameSpan(request.arguments));
+            [CommandNames.NameOrDottedNameSpan]: (request: protocol.NameOfDottedSpanRequest) => {
+                return this.requiredResponse<protocol.NameOfDottedSpanResponseBody>(this.getNameOrDottedNameSpan(request.arguments));
             },
-            [CommandNames.BreakpointStatement]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getBreakpointStatement(request.arguments));
+            [CommandNames.BreakpointStatement]: (request: protocol.BreakpointStatementRequest) => {
+                return this.requiredResponse<protocol.BreakpointStatementResponseBody>(this.getBreakpointStatement(request.arguments));
             },
             [CommandNames.BraceCompletion]: (request: protocol.BraceCompletionRequest) => {
                 return this.requiredResponse<protocol.BraceCompletionResponseBody>(this.isValidBraceCompletion(request.arguments));
@@ -1354,34 +1354,34 @@ namespace ts.server {
                 return this.requiredResponse<protocol.CompileOnSaveEmitFileResponseBody>(this.emitFile(request.arguments));
             },
             [CommandNames.SignatureHelp]: (request: protocol.SignatureHelpRequest) => {
-                return this.requiredResponse(this.getSignatureHelpItems(request.arguments, /*simplifiedResult*/ true));
+                return this.requiredResponse<protocol.SignatureHelpResponseBody>(this.getSignatureHelpItems(request.arguments, /*simplifiedResult*/ true));
             },
             [CommandNames.SignatureHelpFull]: (request: protocol.SignatureHelpRequest) => {
-                return this.requiredResponse(this.getSignatureHelpItems(request.arguments, /*simplifiedResult*/ false));
+                return this.requiredResponse<protocol.SignatureHelpResponseBody>(this.getSignatureHelpItems(request.arguments, /*simplifiedResult*/ false));
             },
             [CommandNames.CompilerOptionsDiagnosticsFull]: (request: protocol.CompilerOptionsDiagnosticsRequest) => {
-                return this.requiredResponse(this.getCompilerOptionsDiagnostics(request.arguments));
+                return this.requiredResponse<protocol.CompilerOptionsDiagnosticsResponseBody>(this.getCompilerOptionsDiagnostics(request.arguments));
             },
-            [CommandNames.EncodedSemanticClassificationsFull]: (request: protocol.SemanticDiagnosticsRequest) => {
-                return this.requiredResponse(this.getEncodedSemanticClassifications(request.arguments));
+            [CommandNames.EncodedSemanticClassificationsFull]: (request: protocol.EncodedSemanticClassificationsRequest) => {
+                return this.requiredResponse<protocol.EncodedSemanticClassificationsResponseBody>(this.getEncodedSemanticClassifications(request.arguments));
             },
-            [CommandNames.Cleanup]: (request: protocol.Request) => {
+            [CommandNames.Cleanup]: (request: protocol.CleanupRequest) => {
                 this.cleanup();
                 return this.requiredResponse(true);
             },
             [CommandNames.SemanticDiagnosticsSync]: (request: protocol.SemanticDiagnosticsSyncRequest) => {
-                return this.requiredResponse(this.getSemanticDiagnosticsSync(request.arguments));
+                return this.requiredResponse<protocol.SemanticDiagnosticsSyncResponseBody>(this.getSemanticDiagnosticsSync(request.arguments));
             },
             [CommandNames.SyntacticDiagnosticsSync]: (request: protocol.SyntacticDiagnosticsSyncRequest) => {
-                return this.requiredResponse(this.getSyntacticDiagnosticsSync(request.arguments));
+                return this.requiredResponse<protocol.SyntacticDiagnosticsSyncResponseBody>(this.getSyntacticDiagnosticsSync(request.arguments));
             },
-            [CommandNames.Geterr]: (request: protocol.Request) => {
-                const geterrArgs = <protocol.GeterrRequestArgs>request.arguments;
-                return { response: this.getDiagnostics(geterrArgs.delay, geterrArgs.files), responseRequired: false };
+            [CommandNames.Geterr]: (request: protocol.GeterrRequest) => {
+                this.getDiagnostics(request.arguments.delay, request.arguments.files);
+                return this.notRequired();
             },
-            [CommandNames.GeterrForProject]: (request: protocol.Request) => {
-                const { file, delay } = <protocol.GeterrForProjectRequestArgs>request.arguments;
-                return { response: this.getDiagnosticsForProject(delay, file), responseRequired: false };
+            [CommandNames.GeterrForProject]: (request: protocol.GeterrForProjectRequest) => {
+                this.getDiagnosticsForProject(request.arguments.delay, request.arguments.file);
+                return this.notRequired();
             },
             [CommandNames.Change]: (request: protocol.ChangeRequest) => {
                 this.change(request.arguments);
@@ -1394,43 +1394,42 @@ namespace ts.server {
             },
             [CommandNames.Reload]: (request: protocol.ReloadRequest) => {
                 this.reload(request.arguments, request.seq);
-                return this.requiredResponse({ reloadFinished: true });
+                return this.requiredResponse<protocol.ReloadResponseBody>({ reloadFinished: true });
             },
-            [CommandNames.Saveto]: (request: protocol.Request) => {
-                const savetoArgs = <protocol.SavetoRequestArgs>request.arguments;
-                this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+            [CommandNames.Saveto]: (request: protocol.SavetoRequest) => {
+                this.saveToTmp(request.arguments.file, request.arguments.tmpfile);
                 return this.notRequired();
             },
-            [CommandNames.Close]: (request: protocol.FileRequest) => {
+            [CommandNames.Close]: (request: protocol.CloseRequest) => {
                 this.closeClientFile(request.arguments.file);
                 return this.notRequired();
             },
             [CommandNames.Navto]: (request: protocol.NavtoRequest) => {
-                return this.requiredResponse(this.getNavigateToItems(request.arguments, /*simplifiedResult*/ true));
+                return this.requiredResponse<protocol.NavToResponseBody>(this.getNavigateToItems(request.arguments, /*simplifiedResult*/ true));
             },
             [CommandNames.NavtoFull]: (request: protocol.NavtoRequest) => {
-                return this.requiredResponse(this.getNavigateToItems(request.arguments, /*simplifiedResult*/ false));
+                return this.requiredResponse<protocol.NavToResponseBody>(this.getNavigateToItems(request.arguments, /*simplifiedResult*/ false));
             },
-            [CommandNames.Brace]: (request: protocol.BraceMatchingRequest) => {
-                return this.requiredResponse<protocol.BraceMatchingResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ true));
+            [CommandNames.Brace]: (request: protocol.BraceRequest) => {
+                return this.requiredResponse<protocol.BraceResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ true));
             },
-            [CommandNames.BraceFull]: (request: protocol.BraceMatchingRequest) => {
-                return this.requiredResponse<protocol.BraceMatchingResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ false));
+            [CommandNames.BraceFull]: (request: protocol.BraceRequest) => {
+                return this.requiredResponse<protocol.BraceResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ false));
             },
-            [CommandNames.NavBar]: (request: protocol.FileRequest) => {
-                return this.requiredResponse(this.getNavigationBarItems(request.arguments, /*simplifiedResult*/ true));
+            [CommandNames.NavBar]: (request: protocol.NavBarRequest) => {
+                return this.requiredResponse<protocol.NavBarResponseBody>(this.getNavigationBarItems(request.arguments, /*simplifiedResult*/ true));
             },
-            [CommandNames.NavBarFull]: (request: protocol.FileRequest) => {
-                return this.requiredResponse(this.getNavigationBarItems(request.arguments, /*simplifiedResult*/ false));
+            [CommandNames.NavBarFull]: (request: protocol.NavBarRequest) => {
+                return this.requiredResponse<protocol.NavBarResponseBody>(this.getNavigationBarItems(request.arguments, /*simplifiedResult*/ false));
             },
-            [CommandNames.Occurrences]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getOccurrences(request.arguments));
+            [CommandNames.Occurrences]: (request: protocol.OccurrencesRequest) => {
+                return this.requiredResponse<protocol.OccurencesResponseBody>(this.getOccurrences(request.arguments));
             },
             [CommandNames.DocumentHighlights]: (request: protocol.DocumentHighlightsRequest) => {
-                return this.requiredResponse(this.getDocumentHighlights(request.arguments, /*simplifiedResult*/ true));
+                return this.requiredResponse<protocol.DocumentHighlightsResponseBody>(this.getDocumentHighlights(request.arguments, /*simplifiedResult*/ true));
             },
             [CommandNames.DocumentHighlightsFull]: (request: protocol.DocumentHighlightsRequest) => {
-                return this.requiredResponse(this.getDocumentHighlights(request.arguments, /*simplifiedResult*/ false));
+                return this.requiredResponse<protocol.DocumentHighlightsResponseBody>(this.getDocumentHighlights(request.arguments, /*simplifiedResult*/ false));
             },
             [CommandNames.CompilerOptionsForInferredProjects]: (request: protocol.SetCompilerOptionsForInferredProjectsRequest) => {
                 return this.requiredResponse(this.setCompilerOptionsForInferredProjects(request.arguments));
