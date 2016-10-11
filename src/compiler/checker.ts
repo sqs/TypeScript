@@ -8191,51 +8191,38 @@ namespace ts {
                             const parameter = spread.right.flags & TypeFlags.TypeParameter ? spread.right : (spread.left as SpreadType).right;
                             const object = spread.right.flags & TypeFlags.TypeParameter ? emptyObjectType : spread.right as ResolvedType;
                             inferFromTypes(getTypeDifference(source, object), parameter);
-                            // TODO: This part should probably be extracted into a function
-                            const key = source.id + "," + target.id;
-                            if (visited[key]) {
-                                return;
-                            }
-                            visited[key] = true;
-                            if (depth === 0) {
-                                sourceStack = [];
-                                targetStack = [];
-                            }
-                            sourceStack[depth] = source;
-                            targetStack[depth] = target;
-                            depth++;
-                            inferFromProperties(source, object);
-                            inferFromIndexTypes(source, object);
-                            depth--;
-                            return;
+                            target = object;
                         }
-                        if (isInProcess(source, target)) {
-                            return;
-                        }
-                        if (isDeeplyNestedGeneric(source, sourceStack, depth) && isDeeplyNestedGeneric(target, targetStack, depth)) {
-                            return;
-                        }
-                        const key = source.id + "," + target.id;
-                        if (visited[key]) {
-                            return;
-                        }
-                        visited[key] = true;
-                        if (depth === 0) {
-                            sourceStack = [];
-                            targetStack = [];
-                        }
-                        sourceStack[depth] = source;
-                        targetStack[depth] = target;
-                        depth++;
-                        inferFromProperties(source, target);
-                        inferFromSignatures(source, target, SignatureKind.Call);
-                        inferFromSignatures(source, target, SignatureKind.Construct);
-                        inferFromIndexTypes(source, target);
-                        depth--;
+                        inferFromStructure(source, target);
                     }
                 }
             }
 
+            function inferFromStructure(source: Type, target: Type) {
+                if (isInProcess(source, target)) {
+                    return;
+                }
+                if (isDeeplyNestedGeneric(source, sourceStack, depth) && isDeeplyNestedGeneric(target, targetStack, depth)) {
+                    return;
+                }
+                const key = source.id + "," + target.id;
+                if (visited[key]) {
+                    return;
+                }
+                visited[key] = true;
+                if (depth === 0) {
+                    sourceStack = [];
+                    targetStack = [];
+                }
+                sourceStack[depth] = source;
+                targetStack[depth] = target;
+                depth++;
+                inferFromProperties(source, target);
+                inferFromSignatures(source, target, SignatureKind.Call);
+                inferFromSignatures(source, target, SignatureKind.Construct);
+                inferFromIndexTypes(source, target);
+                depth--;
+            }
 
             function getTypeDifference(type: ObjectType, diff: ResolvedType): ResolvedType {
                 const members = createMap<Symbol>();
