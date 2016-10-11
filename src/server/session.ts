@@ -70,72 +70,6 @@ namespace ts.server {
         return true;
     }
 
-    export namespace CommandNames {
-        export const Brace = "brace";
-        export const BraceFull = "brace-full";
-        export const BraceCompletion = "braceCompletion";
-        export const Change = "change";
-        export const Close = "close";
-        export const Completions = "completions";
-        export const CompletionsFull = "completions-full";
-        export const CompletionDetails = "completionEntryDetails";
-        export const CompileOnSaveAffectedFileList = "compileOnSaveAffectedFileList";
-        export const CompileOnSaveEmitFile = "compileOnSaveEmitFile";
-        export const Configure = "configure";
-        export const Definition = "definition";
-        export const DefinitionFull = "definition-full";
-        export const Exit = "exit";
-        export const Format = "format";
-        export const Formatonkey = "formatonkey";
-        export const FormatFull = "format-full";
-        export const FormatonkeyFull = "formatonkey-full";
-        export const FormatRangeFull = "formatRange-full";
-        export const Geterr = "geterr";
-        export const GeterrForProject = "geterrForProject";
-        export const Implementation = "implementation";
-        export const ImplementationFull = "implementation-full";
-        export const SemanticDiagnosticsSync = "semanticDiagnosticsSync";
-        export const SyntacticDiagnosticsSync = "syntacticDiagnosticsSync";
-        export const NavBar = "navbar";
-        export const NavBarFull = "navbar-full";
-        export const Navto = "navto";
-        export const NavtoFull = "navto-full";
-        export const Occurrences = "occurrences";
-        export const DocumentHighlights = "documentHighlights";
-        export const DocumentHighlightsFull = "documentHighlights-full";
-        export const Open = "open";
-        export const Quickinfo = "quickinfo";
-        export const QuickinfoFull = "quickinfo-full";
-        export const References = "references";
-        export const ReferencesFull = "references-full";
-        export const Reload = "reload";
-        export const Rename = "rename";
-        export const RenameInfoFull = "rename-full";
-        export const RenameLocationsFull = "renameLocations-full";
-        export const Saveto = "saveto";
-        export const SignatureHelp = "signatureHelp";
-        export const SignatureHelpFull = "signatureHelp-full";
-        export const TypeDefinition = "typeDefinition";
-        export const ProjectInfo = "projectInfo";
-        export const ReloadProjects = "reloadProjects";
-        export const Unknown = "unknown";
-        export const OpenExternalProject = "openExternalProject";
-        export const OpenExternalProjects = "openExternalProjects";
-        export const CloseExternalProject = "closeExternalProject";
-        export const SynchronizeProjectList = "synchronizeProjectList";
-        export const ApplyChangedToOpenFiles = "applyChangedToOpenFiles";
-        export const EncodedSemanticClassificationsFull = "encodedSemanticClassifications-full";
-        export const Cleanup = "cleanup";
-        export const OutliningSpans = "outliningSpans";
-        export const TodoComments = "todoComments";
-        export const Indentation = "indentation";
-        export const DocCommentTemplate = "docCommentTemplate";
-        export const CompilerOptionsDiagnosticsFull = "compilerOptionsDiagnostics-full";
-        export const NameOrDottedNameSpan = "nameOrDottedNameSpan";
-        export const BreakpointStatement = "breakpointStatement";
-        export const CompilerOptionsForInferredProjects = "compilerOptionsForInferredProjects";
-    }
-
     export function formatMessage<T extends protocol.Message>(msg: T, logger: server.Logger, byteLength: (s: string, encoding: string) => number, newLine: string): string {
         const verboseLogging = logger.hasLevel(LogLevel.verbose);
 
@@ -147,6 +81,8 @@ namespace ts.server {
         const len = byteLength(json, "utf8");
         return `Content-Length: ${1 + len}\r\n\r\n${json}${newLine}`;
     }
+
+    import CommandNames = protocol.CommandNames;
 
     export class Session {
         private readonly gcTimer: GcTimer;
@@ -1275,7 +1211,7 @@ namespace ts.server {
             return { responseRequired: false };
         }
 
-        private requiredResponse(response: any) {
+        private requiredResponse<T>(response: T) {
             return { response, responseRequired: true };
         }
 
@@ -1326,10 +1262,10 @@ namespace ts.server {
                 return this.notRequired();
             },
             [CommandNames.Definition]: (request: protocol.DefinitionRequest) => {
-                return this.requiredResponse(this.getDefinition(request.arguments, /*simplifiedResult*/ true));
+                return this.requiredResponse<protocol.DefinitionResponseBody>(this.getDefinition(request.arguments, /*simplifiedResult*/ true));
             },
             [CommandNames.DefinitionFull]: (request: protocol.DefinitionRequest) => {
-                return this.requiredResponse(this.getDefinition(request.arguments, /*simplifiedResult*/ false));
+                return this.requiredResponse<protocol.DefinitionResponseBody>(this.getDefinition(request.arguments, /*simplifiedResult*/ false));
             },
             [CommandNames.TypeDefinition]: (request: protocol.FileLocationRequest) => {
                 return this.requiredResponse(this.getTypeDefinition(request.arguments));
@@ -1355,24 +1291,9 @@ namespace ts.server {
             [CommandNames.RenameInfoFull]: (request: protocol.FileLocationRequest) => {
                 return this.requiredResponse(this.getRenameInfo(request.arguments));
             },
-            [CommandNames.Open]: (request: protocol.Request) => {
-                const openArgs = <protocol.OpenRequestArgs>request.arguments;
-                let scriptKind: ScriptKind;
-                switch (openArgs.scriptKindName) {
-                    case "TS":
-                        scriptKind = ScriptKind.TS;
-                        break;
-                    case "JS":
-                        scriptKind = ScriptKind.JS;
-                        break;
-                    case "TSX":
-                        scriptKind = ScriptKind.TSX;
-                        break;
-                    case "JSX":
-                        scriptKind = ScriptKind.JSX;
-                        break;
-                }
-                this.openClientFile(toNormalizedPath(openArgs.file), openArgs.fileContent, scriptKind);
+            [CommandNames.Open]: (request: protocol.OpenRequest) => {
+                const openArgs = request.arguments;
+                this.openClientFile(toNormalizedPath(openArgs.file), openArgs.fileContent, scriptKindNameToScriptKind(openArgs.scriptKindName));
                 return this.notRequired();
             },
             [CommandNames.Quickinfo]: (request: protocol.QuickInfoRequest) => {
@@ -1385,10 +1306,10 @@ namespace ts.server {
                 return this.requiredResponse(this.getOutliningSpans(request.arguments));
             },
             [CommandNames.TodoComments]: (request: protocol.TodoCommentRequest) => {
-                return this.requiredResponse(this.getTodoComments(request.arguments));
+                return this.requiredResponse<protocol.TodoCommentsResponseBody>(this.getTodoComments(request.arguments));
             },
             [CommandNames.Indentation]: (request: protocol.IndentationRequest) => {
-                return this.requiredResponse(this.getIndentation(request.arguments));
+                return this.requiredResponse<protocol.IndentationResponseBody>(this.getIndentation(request.arguments));
             },
             [CommandNames.NameOrDottedNameSpan]: (request: protocol.FileLocationRequest) => {
                 return this.requiredResponse(this.getNameOrDottedNameSpan(request.arguments));
@@ -1397,40 +1318,40 @@ namespace ts.server {
                 return this.requiredResponse(this.getBreakpointStatement(request.arguments));
             },
             [CommandNames.BraceCompletion]: (request: protocol.BraceCompletionRequest) => {
-                return this.requiredResponse(this.isValidBraceCompletion(request.arguments));
+                return this.requiredResponse<protocol.BraceCompletionResponseBody>(this.isValidBraceCompletion(request.arguments));
             },
-            [CommandNames.DocCommentTemplate]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getDocCommentTemplate(request.arguments));
+            [CommandNames.DocCommentTemplate]: (request: protocol.DocCommentTemplateRequest) => {
+                return this.requiredResponse<protocol.DocCommentTemplateResponseBody>(this.getDocCommentTemplate(request.arguments));
             },
             [CommandNames.Format]: (request: protocol.FormatRequest) => {
-                return this.requiredResponse(this.getFormattingEditsForRange(request.arguments));
+                return this.requiredResponse<protocol.FormatResponseBody>(this.getFormattingEditsForRange(request.arguments));
             },
             [CommandNames.Formatonkey]: (request: protocol.FormatOnKeyRequest) => {
-                return this.requiredResponse(this.getFormattingEditsAfterKeystroke(request.arguments));
+                return this.requiredResponse<protocol.FormatOnKeyResponseBody>(this.getFormattingEditsAfterKeystroke(request.arguments));
             },
             [CommandNames.FormatFull]: (request: protocol.FormatRequest) => {
-                return this.requiredResponse(this.getFormattingEditsForDocumentFull(request.arguments));
+                return this.requiredResponse<protocol.FormatFullResponseBody>(this.getFormattingEditsForDocumentFull(request.arguments));
             },
             [CommandNames.FormatonkeyFull]: (request: protocol.FormatOnKeyRequest) => {
-                return this.requiredResponse(this.getFormattingEditsAfterKeystrokeFull(request.arguments));
+                return this.requiredResponse<protocol.FormatFullResponseBody>(this.getFormattingEditsAfterKeystrokeFull(request.arguments));
             },
             [CommandNames.FormatRangeFull]: (request: protocol.FormatRequest) => {
-                return this.requiredResponse(this.getFormattingEditsForRangeFull(request.arguments));
+                return this.requiredResponse<protocol.FormatFullResponseBody>(this.getFormattingEditsForRangeFull(request.arguments));
             },
-            [CommandNames.Completions]: (request: protocol.CompletionDetailsRequest) => {
-                return this.requiredResponse(this.getCompletions(request.arguments, /*simplifiedResult*/ true));
+            [CommandNames.Completions]: (request: protocol.CompletionsRequest) => {
+                return this.requiredResponse<protocol.CompletionsResponseBody>(this.getCompletions(request.arguments, /*simplifiedResult*/ true));
             },
-            [CommandNames.CompletionsFull]: (request: protocol.CompletionDetailsRequest) => {
-                return this.requiredResponse(this.getCompletions(request.arguments, /*simplifiedResult*/ false));
+            [CommandNames.CompletionsFull]: (request: protocol.CompletionsRequest) => {
+                return this.requiredResponse<protocol.CompletionsResponseBody>(this.getCompletions(request.arguments, /*simplifiedResult*/ false));
             },
             [CommandNames.CompletionDetails]: (request: protocol.CompletionDetailsRequest) => {
-                return this.requiredResponse(this.getCompletionEntryDetails(request.arguments));
+                return this.requiredResponse<protocol.CompletionDetailsResponseBody>(this.getCompletionEntryDetails(request.arguments));
             },
             [CommandNames.CompileOnSaveAffectedFileList]: (request: protocol.CompileOnSaveAffectedFileListRequest) => {
-                return this.requiredResponse(this.getCompileOnSaveAffectedFileList(request.arguments));
+                return this.requiredResponse<protocol.CompileOnSaveAffectedFileListResponseBody>(this.getCompileOnSaveAffectedFileList(request.arguments));
             },
             [CommandNames.CompileOnSaveEmitFile]: (request: protocol.CompileOnSaveEmitFileRequest) => {
-                return this.requiredResponse(this.emitFile(request.arguments));
+                return this.requiredResponse<protocol.CompileOnSaveEmitFileResponseBody>(this.emitFile(request.arguments));
             },
             [CommandNames.SignatureHelp]: (request: protocol.SignatureHelpRequest) => {
                 return this.requiredResponse(this.getSignatureHelpItems(request.arguments, /*simplifiedResult*/ true));
@@ -1480,9 +1401,8 @@ namespace ts.server {
                 this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
                 return this.notRequired();
             },
-            [CommandNames.Close]: (request: protocol.Request) => {
-                const closeArgs = <protocol.FileRequestArgs>request.arguments;
-                this.closeClientFile(closeArgs.file);
+            [CommandNames.Close]: (request: protocol.FileRequest) => {
+                this.closeClientFile(request.arguments.file);
                 return this.notRequired();
             },
             [CommandNames.Navto]: (request: protocol.NavtoRequest) => {
@@ -1491,11 +1411,11 @@ namespace ts.server {
             [CommandNames.NavtoFull]: (request: protocol.NavtoRequest) => {
                 return this.requiredResponse(this.getNavigateToItems(request.arguments, /*simplifiedResult*/ false));
             },
-            [CommandNames.Brace]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getBraceMatching(request.arguments, /*simplifiedResult*/ true));
+            [CommandNames.Brace]: (request: protocol.BraceMatchingRequest) => {
+                return this.requiredResponse<protocol.BraceMatchingResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ true));
             },
-            [CommandNames.BraceFull]: (request: protocol.FileLocationRequest) => {
-                return this.requiredResponse(this.getBraceMatching(request.arguments, /*simplifiedResult*/ false));
+            [CommandNames.BraceFull]: (request: protocol.BraceMatchingRequest) => {
+                return this.requiredResponse<protocol.BraceMatchingResponseBody>(this.getBraceMatching(request.arguments, /*simplifiedResult*/ false));
             },
             [CommandNames.NavBar]: (request: protocol.FileRequest) => {
                 return this.requiredResponse(this.getNavigationBarItems(request.arguments, /*simplifiedResult*/ true));
@@ -1516,7 +1436,7 @@ namespace ts.server {
                 return this.requiredResponse(this.setCompilerOptionsForInferredProjects(request.arguments));
             },
             [CommandNames.ProjectInfo]: (request: protocol.ProjectInfoRequest) => {
-                return this.requiredResponse(this.getProjectInfo(request.arguments));
+                return this.requiredResponse<protocol.ProjectInfoResponseBody>(this.getProjectInfo(request.arguments));
             },
             [CommandNames.ReloadProjects]: (request: protocol.ReloadProjectsRequest) => {
                 this.projectService.reloadProjects();

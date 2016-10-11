@@ -2,6 +2,73 @@
   * Declaration module describing the TypeScript Server protocol
   */
 declare namespace ts.server.protocol {
+
+    export namespace CommandNames {
+        export const Brace = "brace";
+        export const BraceFull = "brace-full";
+        export const BraceCompletion = "braceCompletion";
+        export const Change = "change";
+        export const Close = "close";
+        export const Completions = "completions";
+        export const CompletionsFull = "completions-full";
+        export const CompletionDetails = "completionEntryDetails";
+        export const CompileOnSaveAffectedFileList = "compileOnSaveAffectedFileList";
+        export const CompileOnSaveEmitFile = "compileOnSaveEmitFile";
+        export const Configure = "configure";
+        export const Definition = "definition";
+        export const DefinitionFull = "definition-full";
+        export const Exit = "exit";
+        export const Format = "format";
+        export const Formatonkey = "formatonkey";
+        export const FormatFull = "format-full";
+        export const FormatonkeyFull = "formatonkey-full";
+        export const FormatRangeFull = "formatRange-full";
+        export const Geterr = "geterr";
+        export const GeterrForProject = "geterrForProject";
+        export const Implementation = "implementation";
+        export const ImplementationFull = "implementation-full";
+        export const SemanticDiagnosticsSync = "semanticDiagnosticsSync";
+        export const SyntacticDiagnosticsSync = "syntacticDiagnosticsSync";
+        export const NavBar = "navbar";
+        export const NavBarFull = "navbar-full";
+        export const Navto = "navto";
+        export const NavtoFull = "navto-full";
+        export const Occurrences = "occurrences";
+        export const DocumentHighlights = "documentHighlights";
+        export const DocumentHighlightsFull = "documentHighlights-full";
+        export const Open = "open";
+        export const Quickinfo = "quickinfo";
+        export const QuickinfoFull = "quickinfo-full";
+        export const References = "references";
+        export const ReferencesFull = "references-full";
+        export const Reload = "reload";
+        export const Rename = "rename";
+        export const RenameInfoFull = "rename-full";
+        export const RenameLocationsFull = "renameLocations-full";
+        export const Saveto = "saveto";
+        export const SignatureHelp = "signatureHelp";
+        export const SignatureHelpFull = "signatureHelp-full";
+        export const TypeDefinition = "typeDefinition";
+        export const ProjectInfo = "projectInfo";
+        export const ReloadProjects = "reloadProjects";
+        export const Unknown = "unknown";
+        export const OpenExternalProject = "openExternalProject";
+        export const OpenExternalProjects = "openExternalProjects";
+        export const CloseExternalProject = "closeExternalProject";
+        export const SynchronizeProjectList = "synchronizeProjectList";
+        export const ApplyChangedToOpenFiles = "applyChangedToOpenFiles";
+        export const EncodedSemanticClassificationsFull = "encodedSemanticClassifications-full";
+        export const Cleanup = "cleanup";
+        export const OutliningSpans = "outliningSpans";
+        export const TodoComments = "todoComments";
+        export const Indentation = "indentation";
+        export const DocCommentTemplate = "docCommentTemplate";
+        export const CompilerOptionsDiagnosticsFull = "compilerOptionsDiagnostics-full";
+        export const NameOrDottedNameSpan = "nameOrDottedNameSpan";
+        export const BreakpointStatement = "breakpointStatement";
+        export const CompilerOptionsForInferredProjects = "compilerOptionsForInferredProjects";
+    }
+
     /**
       * A TypeScript Server message
       */
@@ -35,7 +102,8 @@ declare namespace ts.server.protocol {
     /**
       * Request to reload the project structure for all the opened files
       */
-    export interface ReloadProjectsRequest extends Message {
+    export interface ReloadProjectsRequest extends Request {
+        command: typeof CommandNames.Reload;
     }
 
     /**
@@ -102,8 +170,21 @@ declare namespace ts.server.protocol {
      * A request to get TODO comments from the file
      */
     export interface TodoCommentRequest extends FileRequest {
+        command: typeof CommandNames.TodoComments;
         arguments: TodoCommentRequestArgs;
     }
+
+    /**
+     * A response for TodoCommentRequest request
+     */
+    export interface TodoCommentsResponse extends Response {
+        body: TodoCommentsResponseBody;
+    }
+
+    /**
+     * A list of discovered TODO comments
+     */
+    export type TodoCommentsResponseBody = TodoComment[];
 
     /**
      * Arguments for TodoCommentRequest request.
@@ -119,6 +200,7 @@ declare namespace ts.server.protocol {
      * A request to get indentation for a location in file
      */
     export interface IndentationRequest extends FileLocationRequest {
+        command: typeof CommandNames.Indentation;
         arguments: IndentationRequestArgs;
     }
 
@@ -131,6 +213,24 @@ declare namespace ts.server.protocol {
          * If argument is omitted - then it will use settings for file that were previously set via 'configure' request or global settings.
          */
         options?: EditorSettings;
+    }
+
+    /**
+     * A response for IndentationRequest request
+     */
+    export interface IndentationResponse extends Response {
+        body: IndentationResponseBody;
+    }
+
+    export interface IndentationResponseBody {
+        /**
+         * Base position in the document that indent should be relative to.
+         */
+        position: number;
+        /**
+         * The number of columns the indent should be at relative to the 'position' column.
+         */
+        indentation: number;
     }
 
     /**
@@ -147,6 +247,7 @@ declare namespace ts.server.protocol {
       * A request to get the project information of the current file.
       */
     export interface ProjectInfoRequest extends Request {
+        command: typeof CommandNames.ProjectInfo;
         arguments: ProjectInfoRequestArgs;
     }
 
@@ -205,8 +306,13 @@ declare namespace ts.server.protocol {
       * Response message for "projectInfo" request
       */
     export interface ProjectInfoResponse extends Response {
-        body?: ProjectInfo;
+        body?: ProjectInfoResponseBody;
     }
+
+    /**
+     * Contains project information.
+     */
+    type ProjectInfoResponseBody = protocol.ProjectInfo;
 
     /**
       * Request whose sole parameter is a file name.
@@ -281,6 +387,7 @@ declare namespace ts.server.protocol {
       * define the symbol found in file at location line, col.
       */
     export interface DefinitionRequest extends FileLocationRequest {
+        command: typeof CommandNames.Definition | typeof CommandNames.DefinitionFull;
     }
 
     /**
@@ -336,8 +443,13 @@ declare namespace ts.server.protocol {
       * Definition response message.  Gives text range for definition.
       */
     export interface DefinitionResponse extends Response {
-        body?: FileSpan[];
+        body?: DefinitionResponseBody;
     }
+
+    /**
+     * Array of ranges containing definitions referenced at specified position.
+     */
+    export type DefinitionResponseBody = FileSpan[] | DefinitionInfo[];
 
     /**
       * Definition response message.  Gives text range for definition.
@@ -354,9 +466,29 @@ declare namespace ts.server.protocol {
     }
 
     /**
+     * Request to get a template for JSDoc command to be inserted at given position
+     */
+    export interface DocCommentTemplateRequest extends FileLocationRequest {
+        command: typeof CommandNames.DocCommentTemplate;
+    }
+
+    /**
+     * Response for DocCommentTemplateRequest request.
+     */
+    export interface DocCommentTemplateResponse extends Response {
+        body?: DocCommentTemplateResponseBody;
+    }
+
+    /**
+     * A text of template to be inserted at given position.
+     */
+    export type DocCommentTemplateResponseBody = TextInsertion;
+
+    /**
      * Request to get brace completion for a location in the file.
      */
     export interface BraceCompletionRequest extends FileLocationRequest {
+        command: typeof CommandNames.Brace;
         arguments: BraceCompletionRequestArgs;
     }
 
@@ -369,6 +501,34 @@ declare namespace ts.server.protocol {
          */
         openingBrace: string;
     }
+
+    export interface BraceCompletionResponse extends Response {
+        arguments: BraceCompletionResponseBody;
+    }
+
+    /**
+     * true if brace completion for a specified brace is valid at given position, otherwise false.
+     */
+    export type BraceCompletionResponseBody = boolean;
+
+    /**
+     * Request to find matching braces for a given position in file.
+     */
+    export interface BraceMatchingRequest extends FileLocationRequest {
+        command: typeof CommandNames.Brace | typeof CommandNames.BraceFull;
+    }
+
+    /**
+     * Response for BraceMatchingRequest request.
+     */
+    export interface BraceMatchingResponse extends Response {
+        body: BraceMatchingResponseBody;
+    }
+
+    /**
+     * List of ranges containing matching braces for a specified location in file
+     */
+    export type BraceMatchingResponseBody = protocol.TextSpan[] | ts.TextSpan[];
 
     /**
       * Get occurrences request; value of command field is
@@ -810,6 +970,7 @@ declare namespace ts.server.protocol {
       *  host information, such as host type, tab size, and indent size.
       */
     export interface ConfigureRequest extends Request {
+        command: typeof CommandNames.Configure;
         arguments: ConfigureRequestArguments;
     }
 
@@ -847,6 +1008,7 @@ declare namespace ts.server.protocol {
       * send a response to an open request.
       */
     export interface OpenRequest extends Request {
+        command: typeof CommandNames.Open;
         arguments: OpenRequestArgs;
     }
 
@@ -966,6 +1128,7 @@ declare namespace ts.server.protocol {
       *  to exit.
       */
     export interface ExitRequest extends Request {
+        command: typeof CommandNames.Exit;
     }
 
     /**
@@ -976,6 +1139,7 @@ declare namespace ts.server.protocol {
       * currently send a response to a close request.
       */
     export interface CloseRequest extends FileRequest {
+        command: typeof CommandNames.Close;
     }
 
     /**
@@ -983,6 +1147,7 @@ declare namespace ts.server.protocol {
      * NOTE: this us query-only operation and does not generate any output on disk.
      */
     export interface CompileOnSaveAffectedFileListRequest extends FileRequest {
+        command: typeof CommandNames.CompileOnSaveAffectedFileList;
     }
 
     /**
@@ -1003,15 +1168,30 @@ declare namespace ts.server.protocol {
      * Response for CompileOnSaveAffectedFileListRequest request; 
      */
     export interface CompileOnSaveAffectedFileListResponse extends Response {
-        body: CompileOnSaveAffectedFileListSingleProject[];
+        body: CompileOnSaveAffectedFileListResponseBody;
     }
+
+    export type CompileOnSaveAffectedFileListResponseBody = CompileOnSaveAffectedFileListSingleProject[]; 
 
     /**
      * Request to recompile the file. All generated outputs (.js, .d.ts or .js.map files) is written on disk.
      */
     export interface CompileOnSaveEmitFileRequest extends FileRequest {
+        command: typeof CommandNames.CompileOnSaveEmitFile;
         args: CompileOnSaveEmitFileRequestArgs;
     }
+
+    /**
+     * Response for CompileOnSaveEmitFileRequest request;
+     */
+    export interface CompileOnSaveEmitFileResponse extends Response {
+        body: CompileOnSaveEmitFileResponseBody;
+    }
+
+    /**
+     * true if compile on save request succeeded, otherwise false.
+     */
+    export type CompileOnSaveEmitFileResponseBody = boolean;
 
     /**
      * Arguments for CompileOnSaveEmitFileRequest
@@ -1107,6 +1287,7 @@ declare namespace ts.server.protocol {
       * reformatted text.
       */
     export interface FormatRequest extends FileLocationRequest {
+        command: typeof CommandNames.Format | typeof CommandNames.FormatFull | typeof CommandNames.FormatRangeFull;
         arguments: FormatRequestArgs;
     }
 
@@ -1139,8 +1320,25 @@ declare namespace ts.server.protocol {
       * Format and format on key response message.
       */
     export interface FormatResponse extends Response {
-        body?: CodeEdit[];
+        body?: FormatResponseBody;
     }
+
+    /**
+     * A set of edit to be applied to the range
+     */
+    export type FormatResponseBody = protocol.CodeEdit[];
+
+    /**
+     * A response for FormatFullRequest
+     */
+    export interface FormatFullResponse extends Response {
+        body?: FormatFullResponseBody;
+    }
+
+    /**
+     * A set of edit to be applied to the range
+     */
+    export type FormatFullResponseBody = ts.TextChange[];
 
     /**
       * Arguments for format on key messages.
@@ -1163,8 +1361,21 @@ declare namespace ts.server.protocol {
       * reformatted text.
       */
     export interface FormatOnKeyRequest extends FileLocationRequest {
+        command: typeof CommandNames.Formatonkey | typeof CommandNames.FormatonkeyFull;
         arguments: FormatOnKeyRequestArgs;
     }
+
+    /**
+     * Response for FormatOnKeyRequest.
+     */
+    export interface FormatOnKeyResponse extends Response {
+        body?: FormatOnKeyResponseBody;
+    }
+
+    /**
+     * A set of edits to be applied to a source code range.
+     */
+    type FormatOnKeyResponseBody = CodeEdit[];
 
     /**
       * Arguments for completions messages.
@@ -1183,6 +1394,7 @@ declare namespace ts.server.protocol {
       * begin with prefix.
       */
     export interface CompletionsRequest extends FileLocationRequest {
+        command: typeof CommandNames.Completions | typeof CommandNames.CompletionsFull;
         arguments: CompletionsRequestArgs;
     }
 
@@ -1203,8 +1415,10 @@ declare namespace ts.server.protocol {
       * detailed information for each completion entry.
       */
     export interface CompletionDetailsRequest extends FileLocationRequest {
+        command: typeof CommandNames.CompletionDetails;
         arguments: CompletionDetailsRequestArgs;
     }
+
 
     /**
       * Part of a symbol description.
@@ -1277,12 +1491,25 @@ declare namespace ts.server.protocol {
     }
 
     export interface CompletionsResponse extends Response {
-        body?: CompletionEntry[];
+        body?: CompletionsResponseBody;
     }
 
+    /**
+     * A list of completion entries
+     */
+    export type CompletionsResponseBody = CompletionEntry[] | CompletionInfo;
+
+    /**
+     * Response for CompletionDetailsRequest request;
+     */
     export interface CompletionDetailsResponse extends Response {
-        body?: CompletionEntryDetails[];
+        body?: CompletionDetailsResponseBody;
     }
+
+    /**
+     * A list of completion entry details.
+     */
+    export type CompletionDetailsResponseBody = protocol.CompletionEntryDetails[];
 
     /**
      * Signature help information for a single parameter
@@ -1719,6 +1946,7 @@ declare namespace ts.server.protocol {
       * Server does not currently send a response to a change request.
       */
     export interface ChangeRequest extends FileLocationRequest {
+        command: typeof CommandNames.Change;
         arguments: ChangeRequestArgs;
     }
 
