@@ -14,7 +14,8 @@ namespace ts {
     }
 
     /* @internal */
-    export function createResolvedModule(resolvedFileName: string, isExternalLibraryImport: boolean, failedLookupLocations: string[]): ResolvedModuleWithFailedLookupLocations {
+    //this shouldn't be exported
+    export function createResolvedModule(resolvedTsFileName: string, resolvedJsFileName: string, isExternalLibraryImport: boolean, failedLookupLocations: string[]): ResolvedModuleWithFailedLookupLocations {
         return { resolvedModule: resolvedFileName ? { resolvedFileName, isExternalLibraryImport } : undefined, failedLookupLocations };
     }
 
@@ -25,9 +26,11 @@ namespace ts {
     /* @internal */
     export interface ModuleResolutionState {
         host: ModuleResolutionHost;
+        //we don't look at the --jsx and --allowJs options in here any more
         compilerOptions: CompilerOptions;
         traceEnabled: boolean;
         // skip .tsx files if jsx is not enabled
+        //kill
         skipTsx: boolean;
     }
 
@@ -263,6 +266,7 @@ namespace ts {
         return result;
     }
 
+    //If editing this, see the one in lsHost.ts too!
     export function resolveModuleName(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
         const traceEnabled = isTraceEnabled(compilerOptions, host);
         if (traceEnabled) {
@@ -546,7 +550,7 @@ namespace ts {
         return createResolvedModule(resolvedFileName, isExternalLibraryImport, failedLookupLocations);
     }
 
-    function nodeLoadModuleByRelativeName(candidate: string, failedLookupLocations: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): string {
+    function nodeLoadModuleByRelativeName(candidate: string, failedLookupLocations: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): Resolved | undefined {
 
         if (state.traceEnabled) {
             trace(state.host, Diagnostics.Loading_module_as_file_Slash_folder_candidate_module_location_0, candidate);
@@ -567,9 +571,9 @@ namespace ts {
      * @param {boolean} onlyRecordFailures - if true then function won't try to actually load files but instead record all attempts as failures. This flag is necessary
      * in cases when we know upfront that all load attempts will fail (because containing folder does not exists) however we still need to record all failed lookup locations.
      */
-    function loadModuleFromFile(candidate: string, failedLookupLocation: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): string | undefined {
+    function loadModuleFromFile(candidate: string, failedLookupLocation: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): Resolved | undefined {
         // First, try adding an extension. An import of "foo" could be matched by a file "foo.ts", or "foo.js" by "foo.js.ts"
-        const resolvedByAddingExtension = tryAddingExtensions(candidate, allSupportedExtensions, failedLookupLocation, onlyRecordFailures, state);
+        const resolvedByAddingExtension = tryAddingExtensions(candidate, failedLookupLocation, onlyRecordFailures, state);
         if (resolvedByAddingExtension) {
             return resolvedByAddingExtension;
         }
@@ -582,12 +586,12 @@ namespace ts {
                 const extension = candidate.substring(extensionless.length);
                 trace(state.host, Diagnostics.File_name_0_has_a_1_extension_stripping_it, candidate, extension);
             }
-            return tryAddingExtensions(extensionless, allSupportedExtensions, failedLookupLocation, onlyRecordFailures, state);
+            return tryAddingExtensions(extensionless, failedLookupLocation, onlyRecordFailures, state);
         }
     }
 
     /** Try to return an existing file that adds one of the `extensions` to `candidate`. */
-    function tryAddingExtensions(candidate: string, extensions: string[], failedLookupLocation: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): string | undefined {
+    function tryAddingExtensions(candidate: string, failedLookupLocation: string[], onlyRecordFailures: boolean, state: ModuleResolutionState): string | undefined {
         if (!onlyRecordFailures) {
             // check if containing folder exists - if it doesn't then just record failures for all supported extensions without disk probing
             const directory = getDirectoryPath(candidate);
@@ -595,7 +599,7 @@ namespace ts {
                 onlyRecordFailures = !directoryProbablyExists(directory, state.host);
             }
         }
-        return forEach(extensions, ext =>
+        return forEach(allSupportedExtensions, ext =>
             !(state.skipTsx && isJsxOrTsxExtension(ext)) && tryFile(candidate + ext, failedLookupLocation, onlyRecordFailures, state));
     }
 
@@ -655,7 +659,7 @@ namespace ts {
         return combinePaths(directory, "package.json");
     }
 
-    function loadModuleFromNodeModulesFolder(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): string {
+    function loadModuleFromNodeModulesFolder(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): ResolvedModule | undefined {
         const nodeModulesFolder = combinePaths(directory, "node_modules");
         const nodeModulesFolderExists = directoryProbablyExists(nodeModulesFolder, state.host);
         const candidate = normalizePath(combinePaths(nodeModulesFolder, moduleName));
@@ -672,15 +676,16 @@ namespace ts {
     }
 
     /* @internal */
-    export function loadModuleFromNodeModules(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, checkOneLevel: boolean): string {
+    //This should really return ResolvedModule
+    export function loadModuleFromNodeModules(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, checkOneLevel: boolean): ResolvedModule | undefined {
         return loadModuleFromNodeModulesWorker(moduleName, directory, failedLookupLocations, state, checkOneLevel, /*typesOnly*/ false);
     }
 
-    function loadModuleFromNodeModulesAtTypes(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): string {
+    function loadModuleFromNodeModulesAtTypes(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): ResolvedModule | undefined {
         return loadModuleFromNodeModulesWorker(moduleName, directory, failedLookupLocations, state, /*checkOneLevel*/ false, /*typesOnly*/ true);
     }
 
-    function loadModuleFromNodeModulesWorker(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, checkOneLevel: boolean, typesOnly: boolean): string {
+    function loadModuleFromNodeModulesWorker(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, checkOneLevel: boolean, typesOnly: boolean): ResolvedModule | undefined {
         directory = normalizeSlashes(directory);
         while (true) {
             const baseName = getBaseFileName(directory);

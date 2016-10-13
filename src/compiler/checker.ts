@@ -1346,25 +1346,28 @@ namespace ts {
         }
 
         //neater
-        function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule | undefined): SourceFile | undefined {
+        //This should maybe be done in program.ts, not in checker.
+        //Con: better to do diagnostics in checker!
+        //Can't do diagnostics *right here* because we want to use patternAmbientModules as a backup
+        function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule): string | undefined {
             if (resolvedTsFileName) {
-                if (fileExtensionIs(resolvedTsFileName, '.tsx') && !compilerOptions.jsx) {
-                    //TODO: diagnostic for this
-                    return undefined;
-                }
-                else {
-                    return host.getSourceFile(resolvedTsFileName);
-                }
+                return (fileExtensionIs(resolvedTsFileName, '.tsx') && !compilerOptions.jsx) ? undefined : resolvedTsFileName;
             }
             else {
                 if (!compilerOptions.allowJs) {
-                    //TODO: diagnostic for this
                     return undefined;
                 }
                 else {
-                    //nodeModulesMaxDepth?
+                    //nodeModulesMaxDepth already handled by now?
+                    return resolvedJsFileName;
                 }
             }
+        }
+
+        //name
+        function goof(resolvedModule: ResolvedModule): SourceFile | undefined {
+            const f = floof(resolvedModule);
+            return f && host.getSourceFile(f);
         }
 
         function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: DiagnosticMessage, errorNode: Node): Symbol {
@@ -1386,7 +1389,7 @@ namespace ts {
             }
 
             const resolvedModule = getResolvedModule(getSourceFileOfNode(location), moduleReference);
-            const sourceFile = resolvedModule && host.getSourceFile(resolvedModule.resolvedFileName);
+            const sourceFile = resolvedModule && goof(resolvedModule);
             if (sourceFile) {
                 if (sourceFile.symbol) {
                     // merged symbol is module declaration symbol combined with all augmentations
@@ -1413,6 +1416,8 @@ namespace ts {
                     const diag = Diagnostics.An_import_path_cannot_end_with_a_0_extension_Consider_importing_1_instead;
                     error(errorNode, diag, tsExtension, removeExtension(moduleName, tsExtension));
                 }
+                //TODO: also have error if the resolved module has a tsx or js extension
+                //Recommend --tsx or --allowJs flag
                 else {
                     error(errorNode, moduleNotFoundError, moduleName);
                 }

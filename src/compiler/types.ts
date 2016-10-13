@@ -3274,11 +3274,21 @@ namespace ts {
         getDirectories?(path: string): string[];
     }
 
+    //neater
+    export interface Resolved {
+        __resolvedModuleBrand: any;
+        resolvedTsFileName?: string;
+        resolvedJsFileName?: string;
+    }
+
+    //changing this is a breaking change!
     export interface ResolvedModule {
+        __resolvedModuleBrand: any;
+        //one of these must be set; else use 'undefined'
         //TODO:document
-        resolvedTsFileName: string;
+        resolvedTsFileName?: string;
         //TODO:document
-        resolvedJsFileName: string;
+        resolvedJsFileName?: string;
         /*
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be proper external module:
          * - be a .d.ts file
@@ -3286,6 +3296,10 @@ namespace ts {
          * - don't use tripleslash references
          */
         isExternalLibraryImport?: boolean;
+    }
+    //move
+    export function resolvedModulePath({ resolvedTsFileName, resolvedJsFileName }: ResolvedModule): string {
+        return resolvedTsFileName || resolvedJsFileName;
     }
 
     export interface ResolvedModuleWithFailedLookupLocations {

@@ -679,6 +679,7 @@ namespace ts {
             return emitResult;
         }
 
+        //This is the one used by checker
         function getSourceFile(fileName: string): SourceFile {
             return getSourceFileByPath(toPath(fileName, currentDirectory, getCanonicalFileName));
         }
