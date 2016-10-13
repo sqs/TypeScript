@@ -3275,7 +3275,10 @@ namespace ts {
     }
 
     export interface ResolvedModule {
-        resolvedFileName: string;
+        //TODO:document
+        resolvedTsFileName: string;
+        //TODO:document
+        resolvedJsFileName: string;
         /*
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be proper external module:
          * - be a .d.ts file

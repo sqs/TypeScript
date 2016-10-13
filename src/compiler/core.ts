@@ -1177,7 +1177,7 @@ namespace ts {
 
     /**
      * Returns the path except for its basename. Eg:
-     * 
+     *
      * /path/to/file.ext -> /path/to
      */
     export function getDirectoryPath(path: Path): Path;
@@ -1718,7 +1718,8 @@ namespace ts {
     /** Must have ".d.ts" first because if ".ts" goes first, that will be detected as the extension instead of ".d.ts". */
     export const supportedTypescriptExtensionsForExtractExtension = [".d.ts", ".ts", ".tsx"];
     export const supportedJavascriptExtensions = [".js", ".jsx"];
-    const allSupportedExtensions  = supportedTypeScriptExtensions.concat(supportedJavascriptExtensions);
+    //used in moduleNameResolver.ts -- probably not used anywhere else any more ?
+    export const allSupportedExtensions  = supportedTypeScriptExtensions.concat(supportedJavascriptExtensions);
 
     export function getSupportedExtensions(options?: CompilerOptions): string[] {
         return options && options.allowJs ? allSupportedExtensions : supportedTypeScriptExtensions;

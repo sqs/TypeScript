@@ -1345,6 +1345,28 @@ namespace ts {
             return resolveExternalModule(location, moduleReferenceLiteral.text, moduleNotFoundError, moduleReferenceLiteral);
         }
 
+        //neater
+        function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule | undefined): SourceFile | undefined {
+            if (resolvedTsFileName) {
+                if (fileExtensionIs(resolvedTsFileName, '.tsx') && !compilerOptions.jsx) {
+                    //TODO: diagnostic for this
+                    return undefined;
+                }
+                else {
+                    return host.getSourceFile(resolvedTsFileName);
+                }
+            }
+            else {
+                if (!compilerOptions.allowJs) {
+                    //TODO: diagnostic for this
+                    return undefined;
+                }
+                else {
+                    //nodeModulesMaxDepth?
+                }
+            }
+        }
+
         function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: DiagnosticMessage, errorNode: Node): Symbol {
             // Module names are escaped in our symbol table.  However, string literal values aren't.
             // Escape the name in the "require(...)" clause to ensure we find the right symbol.
