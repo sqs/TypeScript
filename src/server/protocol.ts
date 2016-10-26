@@ -2251,6 +2251,7 @@ namespace ts.server.protocol {
         preserveConstEnums?: boolean;
         project?: string;
         reactNamespace?: string;
+        relaySchema?: string;
         removeComments?: boolean;
         rootDir?: string;
         rootDirs?: string[];
