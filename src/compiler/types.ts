@@ -3004,6 +3004,7 @@ namespace ts {
         project?: string;
         /* @internal */ pretty?: DiagnosticStyle;
         reactNamespace?: string;
+        relaySchema?: string;
         removeComments?: boolean;
         rootDir?: string;
         rootDirs?: string[];
@@ -3371,6 +3372,8 @@ namespace ts {
         ContainsTypeScript = 1 << 1,
         Jsx = 1 << 2,
         ContainsJsx = 1 << 3,
+        Relay = 1 << 30,
+        ContainsRelay = 1 << 31,
         ES2017 = 1 << 4,
         ContainsES2017 = 1 << 5,
         ES2016 = 1 << 6,
@@ -3403,6 +3406,7 @@ namespace ts {
         // - Bitmasks that are used to assert facts about the syntax of a node and its subtree.
         AssertTypeScript = TypeScript | ContainsTypeScript,
         AssertJsx = Jsx | ContainsJsx,
+        AssertRelay = Relay | ContainsRelay,
         AssertES2017 = ES2017 | ContainsES2017,
         AssertES2016 = ES2016 | ContainsES2016,
         AssertES2015 = ES2015 | ContainsES2015,
@@ -3411,7 +3415,7 @@ namespace ts {
         // Scope Exclusions
         // - Bitmasks that exclude flags from propagating out of a specific context
         //   into the subtree flags of their container.
-        NodeExcludes = TypeScript | Jsx | ES2017 | ES2016 | ES2015 | DestructuringAssignment | Generator | HasComputedFlags,
+        NodeExcludes = TypeScript | Jsx | Relay | ES2017 | ES2016 | ES2015 | DestructuringAssignment | Generator | HasComputedFlags,
         ArrowFunctionExcludes = NodeExcludes | ContainsDecorators | ContainsDefaultValueAssignments | ContainsLexicalThis | ContainsParameterPropertyAssignments | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,
         FunctionExcludes = NodeExcludes | ContainsDecorators | ContainsDefaultValueAssignments | ContainsCapturedLexicalThis | ContainsLexicalThis | ContainsParameterPropertyAssignments | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,
         ConstructorExcludes = NodeExcludes | ContainsDefaultValueAssignments | ContainsLexicalThis | ContainsCapturedLexicalThis | ContainsBlockScopedBinding | ContainsYield | ContainsHoistedDeclarationOrCompletion,

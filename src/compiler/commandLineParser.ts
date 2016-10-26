@@ -78,6 +78,11 @@ namespace ts {
             description: Diagnostics.Specify_the_object_invoked_for_createElement_and_spread_when_targeting_react_JSX_emit
         },
         {
+            name: "relaySchema",
+            type: "string",
+            isFilePath: true,
+        },
+        {
             name: "listFiles",
             type: "boolean",
         },

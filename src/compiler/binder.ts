@@ -3065,11 +3065,15 @@ namespace ts {
             case SyntaxKind.TemplateMiddle:
             case SyntaxKind.TemplateTail:
             case SyntaxKind.TemplateExpression:
-            case SyntaxKind.TaggedTemplateExpression:
             case SyntaxKind.ShorthandPropertyAssignment:
             case SyntaxKind.ForOfStatement:
                 // These nodes are ES6 syntax.
                 transformFlags |= TransformFlags.AssertES2015;
+                break;
+
+            case SyntaxKind.TaggedTemplateExpression:
+                // This node is ES6 syntax and maybe a Relay template.
+                transformFlags |= TransformFlags.AssertES2015 | TransformFlags.AssertRelay;
                 break;
 
             case SyntaxKind.YieldExpression:

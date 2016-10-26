@@ -1,6 +1,7 @@
 /// <reference path="visitor.ts" />
 /// <reference path="transformers/ts.ts" />
 /// <reference path="transformers/jsx.ts" />
+/// <reference path="transformers/relay.ts" />
 /// <reference path="transformers/es2017.ts" />
 /// <reference path="transformers/es2016.ts" />
 /// <reference path="transformers/es2015.ts" />
@@ -115,6 +116,10 @@ namespace ts {
 
         if (jsx === JsxEmit.React) {
             transformers.push(transformJsx);
+        }
+
+        if (compilerOptions.relaySchema) {
+            transformers.push(transformRelay);
         }
 
         if (languageVersion < ScriptTarget.ES2017) {
