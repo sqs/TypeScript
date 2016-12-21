@@ -13,6 +13,7 @@ See the Apache Version 2.0 License for specific language governing permissions
 and limitations under the License.
 ***************************************************************************** */
 
+/// <reference path="../../node_modules/@types/node/index.d.ts" />
 /// <reference path="../../src/server/types.d.ts" />
 /// <reference types="node" />
 declare namespace ts {
@@ -443,6 +444,7 @@ declare namespace ts {
         kind: SyntaxKind.Identifier;
         text: string;
         originalKeywordKind?: SyntaxKind;
+        isInJSDocNamespace?: boolean;
     }
     interface TransientIdentifier extends Identifier {
         resolvedSymbol: Symbol;
@@ -1126,11 +1128,15 @@ declare namespace ts {
     interface ModuleDeclaration extends DeclarationStatement {
         kind: SyntaxKind.ModuleDeclaration;
         name: Identifier | LiteralExpression;
-        body?: ModuleBlock | NamespaceDeclaration;
+        body?: ModuleBlock | NamespaceDeclaration | JSDocNamespaceDeclaration | Identifier;
     }
     interface NamespaceDeclaration extends ModuleDeclaration {
         name: Identifier;
         body: ModuleBlock | NamespaceDeclaration;
+    }
+    interface JSDocNamespaceDeclaration extends ModuleDeclaration {
+        name: Identifier;
+        body: JSDocNamespaceDeclaration | Identifier;
     }
     interface ModuleBlock extends Node, Statement {
         kind: SyntaxKind.ModuleBlock;
@@ -1303,6 +1309,7 @@ declare namespace ts {
     }
     interface JSDocTypedefTag extends JSDocTag, Declaration {
         kind: SyntaxKind.JSDocTypedefTag;
+        fullName?: JSDocNamespaceDeclaration | Identifier;
         name?: Identifier;
         typeExpression?: JSDocTypeExpression;
         jsDocTypeLiteral?: JSDocTypeLiteral;
@@ -1650,14 +1657,9 @@ declare namespace ts {
         Null = 4096,
         Never = 8192,
         TypeParameter = 16384,
-        Class = 32768,
-        Interface = 65536,
-        Reference = 131072,
-        Tuple = 262144,
-        Union = 524288,
-        Intersection = 1048576,
-        Anonymous = 2097152,
-        Instantiated = 4194304,
+        Object = 32768,
+        Union = 65536,
+        Intersection = 131072,
         Literal = 480,
         StringOrNumberLiteral = 96,
         PossiblyFalsy = 7406,
@@ -1665,12 +1667,11 @@ declare namespace ts {
         NumberLike = 340,
         BooleanLike = 136,
         EnumLike = 272,
-        ObjectType = 2588672,
-        UnionOrIntersection = 1572864,
-        StructuredType = 4161536,
-        StructuredOrTypeParameter = 4177920,
-        Narrowable = 4178943,
-        NotUnionOrUnit = 2589185,
+        UnionOrIntersection = 196608,
+        StructuredType = 229376,
+        StructuredOrTypeParameter = 245760,
+        Narrowable = 246783,
+        NotUnionOrUnit = 33281,
     }
     type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
     interface Type {
@@ -1691,8 +1692,20 @@ declare namespace ts {
     interface EnumLiteralType extends LiteralType {
         baseType: EnumType & UnionType;
     }
+    const enum ObjectFlags {
+        Class = 1,
+        Interface = 2,
+        Reference = 4,
+        Tuple = 8,
+        Anonymous = 16,
+        Instantiated = 32,
+        ObjectLiteral = 64,
+        EvolvingArray = 128,
+        ObjectLiteralPatternWithComputedProperties = 256,
+        ClassOrInterface = 3,
+    }
     interface ObjectType extends Type {
-        isObjectLiteralPatternWithComputedProperties?: boolean;
+        objectFlags: ObjectFlags;
     }
     interface InterfaceType extends ObjectType {
         typeParameters: TypeParameter[];
@@ -1719,6 +1732,11 @@ declare namespace ts {
     interface UnionType extends UnionOrIntersectionType {
     }
     interface IntersectionType extends UnionOrIntersectionType {
+    }
+    type StructuredType = ObjectType | UnionType | IntersectionType;
+    interface EvolvingArrayType extends ObjectType {
+        elementType: Type;
+        finalArrayType?: Type;
     }
     interface TypeParameter extends Type {
         constraint: Type;
@@ -1818,6 +1836,7 @@ declare namespace ts {
         preserveConstEnums?: boolean;
         project?: string;
         reactNamespace?: string;
+        relaySchema?: string;
         removeComments?: boolean;
         rootDir?: string;
         rootDirs?: string[];
@@ -1847,6 +1866,7 @@ declare namespace ts {
         packageNameToTypingLocation: Map<string>;
         typingOptions: TypingOptions;
         compilerOptions: CompilerOptions;
+        unresolvedImports: ReadonlyArray<string>;
     }
     enum ModuleKind {
         None = 0,
@@ -1989,6 +2009,8 @@ declare namespace ts {
         getMemoryUsage?(): number;
         exit(exitCode?: number): void;
         realpath?(path: string): string;
+        setTimeout?(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
+        clearTimeout?(timeoutId: any): void;
     }
     interface FileWatcher {
         close(): void;
@@ -2735,7 +2757,7 @@ declare namespace ts.server {
         const Perf: Perf;
         type Types = Err | Info | Perf;
     }
-    function createInstallTypingsRequest(project: Project, typingOptions: TypingOptions, cachePath?: string): DiscoverTypings;
+    function createInstallTypingsRequest(project: Project, typingOptions: TypingOptions, unresolvedImports: SortedReadonlyArray<string>, cachePath?: string): DiscoverTypings;
     namespace Errors {
         function ThrowNoProject(): never;
         function ThrowProjectLanguageServiceDisabled(): never;
@@ -2761,6 +2783,8 @@ declare namespace ts.server {
     interface ServerLanguageServiceHost {
         setCompilationSettings(options: CompilerOptions): void;
         notifyFileRemoved(info: ScriptInfo): void;
+        startRecordingFilesWithChangedResolutions(): void;
+        finishRecordingFilesWithChangedResolutions(): Path[];
     }
     const nullLanguageServiceHost: ServerLanguageServiceHost;
     interface ProjectOptions {
@@ -2773,6 +2797,7 @@ declare namespace ts.server {
     }
     function isInferredProjectName(name: string): boolean;
     function makeInferredProjectName(counter: number): string;
+    function toSortedReadonlyArray(arr: string[]): SortedReadonlyArray<string>;
     class ThrottledOperations {
         private readonly host;
         private pendingTimeouts;
@@ -3489,6 +3514,7 @@ declare namespace ts.server.protocol {
         preserveConstEnums?: boolean;
         project?: string;
         reactNamespace?: string;
+        relaySchema?: string;
         removeComments?: boolean;
         rootDir?: string;
         rootDirs?: string[];
@@ -3583,10 +3609,13 @@ declare namespace ts.server {
         private readonly resolvedModuleNames;
         private readonly resolvedTypeReferenceDirectives;
         private readonly getCanonicalFileName;
+        private filesWithChangedSetOfUnresolvedImports;
         private readonly resolveModuleName;
         readonly trace: (s: string) => void;
         constructor(host: ServerHost, project: Project, cancellationToken: HostCancellationToken);
-        private resolveNamesWithLocalCache<T, R>(names, containingFile, cache, loader, getResult);
+        startRecordingFilesWithChangedResolutions(): void;
+        finishRecordingFilesWithChangedResolutions(): Path[];
+        private resolveNamesWithLocalCache<T, R>(names, containingFile, cache, loader, getResult, logChanges);
         getProjectVersion(): string;
         getCompilationSettings(): CompilerOptions;
         useCaseSensitiveFileNames(): boolean;
@@ -3612,22 +3641,19 @@ declare namespace ts.server {
 }
 declare namespace ts.server {
     interface ITypingsInstaller {
-        enqueueInstallTypingsRequest(p: Project, typingOptions: TypingOptions): void;
+        enqueueInstallTypingsRequest(p: Project, typingOptions: TypingOptions, unresolvedImports: SortedReadonlyArray<string>): void;
         attach(projectService: ProjectService): void;
         onProjectClosed(p: Project): void;
         readonly globalTypingsCacheLocation: string;
     }
     const nullTypingsInstaller: ITypingsInstaller;
-    interface TypingsArray extends ReadonlyArray<string> {
-        " __typingsArrayBrand": any;
-    }
     class TypingsCache {
         private readonly installer;
         private readonly perProjectCache;
         constructor(installer: ITypingsInstaller);
-        getTypingsForProject(project: Project, forceRefresh: boolean): TypingsArray;
-        invalidateCachedTypingsForProject(project: Project): void;
-        updateTypingsForProject(projectName: string, compilerOptions: CompilerOptions, typingOptions: TypingOptions, newTypings: string[]): void;
+        getTypingsForProject(project: Project, unresolvedImports: SortedReadonlyArray<string>, forceRefresh: boolean): SortedReadonlyArray<string>;
+        updateTypingsForProject(projectName: string, compilerOptions: CompilerOptions, typingOptions: TypingOptions, unresolvedImports: SortedReadonlyArray<string>, newTypings: string[]): void;
+        deleteTypingsForProject(projectName: string): void;
         onProjectClosed(project: Project): void;
     }
 }
@@ -3663,6 +3689,15 @@ declare namespace ts.server {
     interface ProjectFilesWithTSDiagnostics extends protocol.ProjectFiles {
         projectErrors: Diagnostic[];
     }
+    class UnresolvedImportsMap {
+        readonly perFileMap: FileMap<ReadonlyArray<string>>;
+        private version;
+        clear(): void;
+        getVersion(): number;
+        remove(path: Path): void;
+        get(path: Path): ReadonlyArray<string>;
+        set(path: Path, value: ReadonlyArray<string>): void;
+    }
     abstract class Project {
         readonly projectKind: ProjectKind;
         readonly projectService: ProjectService;
@@ -3674,6 +3709,8 @@ declare namespace ts.server {
         private rootFilesMap;
         private lsHost;
         private program;
+        private cachedUnresolvedImportsPerFile;
+        private lastCachedUnresolvedImportsList;
         private languageService;
         builder: Builder;
         private lastReportedFileNames;
@@ -3685,6 +3722,7 @@ declare namespace ts.server {
         typesVersion: number;
         isNonTsProject(): boolean;
         isJsOnlyProject(): boolean;
+        getCachedUnresolvedImportsPerFile_TestOnly(): UnresolvedImportsMap;
         constructor(projectKind: ProjectKind, projectService: ProjectService, documentRegistry: ts.DocumentRegistry, hasExplicitListOfFiles: boolean, languageServiceEnabled: boolean, compilerOptions: CompilerOptions, compileOnSaveEnabled: boolean);
         getProjectErrors(): Diagnostic[];
         getLanguageService(ensureSynchronized?: boolean): LanguageService;
@@ -3713,6 +3751,7 @@ declare namespace ts.server {
         addRoot(info: ScriptInfo): void;
         removeFile(info: ScriptInfo, detachFromProject?: boolean): void;
         markAsDirty(): void;
+        private extractUnresolvedImportsFromSourceFile(file, result);
         updateGraph(): boolean;
         private setTypings(typings);
         private updateGraphWorker();
